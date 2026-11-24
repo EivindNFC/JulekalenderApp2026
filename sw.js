@@ -1,5 +1,5 @@
 // Toppkalender service worker: lets the app open without network and keeps visited map tiles.
-const APP = 'toppkalender-app-v3';
+const APP = 'toppkalender-app-v4';
 const TILES = 'toppkalender-kart-v1';
 const SHELL = ['./julekalender.html', './manifest.webmanifest', './icon-192.png', './icon-512.png',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'];

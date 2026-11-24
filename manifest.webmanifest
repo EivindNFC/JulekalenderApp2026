@@ -1,6 +1,6 @@
 {
-  "name": "Toppkalender",
-  "short_name": "Toppkalender",
+  "name": "Elisabeths jul",
+  "short_name": "Elisabeths jul",
   "description": "Julekalender med toppturer og gåter",
   "lang": "no",
   "start_url": "./julekalender.html",

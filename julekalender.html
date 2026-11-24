@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Toppkalender</title>
+<title>Elisabeths jul</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
@@ -93,8 +93,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 <body>
 <header>
   <button id="back" aria-label="Tilbake" hidden>‹</button>
-  <h1 id="ttl">Toppkalender</h1>
-  <button id="adm">Arrangør</button>
+  <h1 id="ttl">Elisabeths jul</h1>
+  <button id="adm" hidden>Arrangør</button>
 </header>
 <main>
   <section id="v-home"><div class="scrollv">
@@ -120,6 +120,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
         <div class="tools"><label><input type="checkbox" id="t-open"> Åpne alle luker nå (før desember)</label></div>
         <div class="row"><button class="ghost" id="reset">Nullstill all fremdrift</button><button class="ghost" id="share">Del kalenderen</button></div>
         <div class="row"><button class="ghost" id="imp">Importer kalender</button><button class="ghost" id="defaults">Tilbakestill gåtene</button></div>
+        <div class="row"><button class="pri" id="hideadm">Ferdig: skjul Arrangør-knappen</button></div>
+        <p class="f">Etter dette vises ikke knappen på denne telefonen. Åpne lenken med <b>#arrangor</b> bakerst for å få den tilbake.</p>
       </div>
       <div class="box">
         <h3>Gåter</h3>
@@ -157,6 +159,8 @@ let cfg=store.get('tk_cfg',null);if(!cfg||!Array.isArray(cfg.days)||cfg.days.len
 if(cfg.v!==CFG_VERSION){cfg=clone(DEFAULT);cfg.v=CFG_VERSION;store.set('tk_cfg',cfg)}
 let prog=store.get('tk_prog',{});   /* prog[day][peakId] = {in:time, ok:time} */
 let testOpen=store.get('tk_test',false);
+/* Arrangør-knappen vises bare på telefoner som har åpnet lenken med #arrangor */
+let adminOn=store.get('tk_admin',false);
 const saveCfg=()=>store.set('tk_cfg',cfg),saveProg=()=>store.set('tk_prog',prog);
 const R=6371000,rad=x=>x*Math.PI/180;
 function dist(a,b){const dLat=rad(b.lat-a.lat),dLng=rad(b.lng-a.lng);const s=Math.sin(dLat/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLng/2)**2;return 2*R*Math.asin(Math.sqrt(s))}
@@ -192,8 +196,8 @@ function info(html){modal(html+`<div class="row"><button class="pri" data-x>OK</
 let view='home',day=0;
 function show(v,title){
   view=v;for(const s of ['home','day','admin'])$('#v-'+s).hidden=s!==v;
-  $('#back').hidden=v==='home';$('#adm').hidden=v!=='home';
-  $('#ttl').textContent=title||'Toppkalender';
+  $('#back').hidden=v==='home';$('#adm').hidden=v!=='home'||!adminOn;
+  $('#ttl').textContent=title||'Elisabeths jul';
   if(v!=='day')stopGps();
 }
 $('#back').onclick=()=>{closeModal();show('home');renderCal()};
@@ -314,6 +318,7 @@ function renderRiddles(){
 $('#a-day').onchange=renderRiddles;
 $('#ariddles').oninput=e=>{const k=e.target.dataset.k;if(k===undefined)return;cfg.days[+$('#a-day').value-1][+e.target.closest('.rid').dataset.i][+k]=e.target.value;saveCfg()};
 $('#t-open').onchange=e=>{testOpen=e.target.checked;store.set('tk_test',testOpen)};
+$('#hideadm').onclick=()=>confirmBox('Skjule Arrangør-knappen på denne telefonen? Husk å ta bort haken for «Åpne alle luker nå» og nullstille fremdriften først hvis telefonen skal brukes til selve kalenderen.',()=>{adminOn=false;store.set('tk_admin',false);show('home');renderCal()},'Skjul');
 $('#reset').onclick=()=>confirmBox('Slette all fremdrift (innsjekk og løste gåter) på denne telefonen?',()=>{prog={};saveProg()},'Nullstill');
 $('#defaults').onclick=()=>confirmBox('Tilbakestille topper og gåter til originalen? Dine endringer forsvinner.',()=>{cfg=clone(DEFAULT);saveCfg();drawAdmin();renderPeaks();renderRiddles();fitPeaks(amap)},'Tilbakestill');
 
@@ -327,7 +332,7 @@ $('#share').onclick=()=>{
     <div class="row"><button class="ghost" data-x>Lukk</button>${navigator.share?'<button class="ghost" id="ns">Del via app</button>':''}<button class="pri" id="cp">Kopier</button></div>`,
   b=>{b.querySelector('[data-x]').onclick=closeModal;
     b.querySelector('#cp').onclick=async()=>{try{await navigator.clipboard.writeText(link);$('#sm').textContent='Kopiert.'}catch(e){$('#sl').select();$('#sm').textContent='Marker teksten og kopier manuelt.'}};
-    const ns=b.querySelector('#ns');if(ns)ns.onclick=()=>navigator.share({title:'Toppkalender',text:'Julekalenderen din er klar!',url:link}).catch(()=>{});});
+    const ns=b.querySelector('#ns');if(ns)ns.onclick=()=>navigator.share({title:'Elisabeths jul',text:'Julekalenderen din er klar!',url:link}).catch(()=>{});});
 };
 function importCfg(raw){let s=String(raw||'').trim();const k=s.indexOf('kal=');if(k>=0)s=s.slice(k+4);
   const c=dec(s);if(!c||!Array.isArray(c.peaks)||c.peaks.length!==3||!Array.isArray(c.days)||c.days.length!==24)throw new Error('ugyldig');
@@ -340,6 +345,8 @@ $('#imp').onclick=()=>modal(`<h2>Importer kalender</h2><label class="f">Lim inn 
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 if(!window.L){document.querySelector('main').innerHTML='<div class="scrollv"><h2>Ingen nettforbindelse</h2><p>Kartet trenger internett. Prøv igjen når du har dekning.</p></div>'}
 else{
+  if(location.hash==='#arrangor'){adminOn=true;store.set('tk_admin',true);history.replaceState(null,'',location.pathname+location.search)}
+  $('#adm').hidden=!adminOn;
   renderCal();
   if(location.hash.startsWith('#kal=')){
     try{importCfg(location.hash);renderCal();info('<h2>Julekalenderen er klar!</h2><p>24 luker med tre topper hver. Åpne dagens luke og gå ut på tur.</p>')}
