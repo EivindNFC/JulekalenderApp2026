@@ -3,7 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#a3122a">
+<meta name="theme-color" content="#b3122d">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Toppkalender</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -407,6 +410,7 @@ $('#imp').onclick=()=>modal(`<h2>Importer kalender</h2><label class="f">Lim inn 
   b=>{b.querySelector('[data-x]').onclick=closeModal;b.querySelector('#ig').onclick=()=>{try{importCfg($('#it').value);closeModal();drawAdmin();renderPeaks();renderRiddles();info('<p>Kalenderen er importert.</p>')}catch(e){$('#im').textContent='Fant ingen gyldig kalender i teksten.'}}});
 
 /* ======== start ======== */
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 if(!window.L){document.querySelector('main').innerHTML='<div class="scrollv"><h2>Ingen nettforbindelse</h2><p>Kartet trenger internett. Prøv igjen når du har dekning.</p></div>'}
 else{
   renderCal();
