@@ -113,7 +113,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 </header>
 <main>
   <section id="v-home"><div class="scrollv">
-    <h2>24 luker, tre topper</h2>
+    <h2>Fjelltoppjaktens Julekalender</h2>
     <p class="lead">Åpne dagens luke og gå til Gleodden, Trollkjerringhei og Lille Ravnås. På hver topp sjekker du inn og får dagens gåte. Løs alle tre for å fullføre luka.</p>
     <div class="cal" id="cal"></div>
     <div class="box"><h3>Hemmelig beskjed</h3><p class="lead" style="margin:4px 0 0">Hver fullførte luke gir én bokstav. Kan du gjette beskjeden før julaften?</p><div class="secret" id="secret"></div>
@@ -224,7 +224,13 @@ function show(v,title){
   $('#ttl').textContent=title||'Elisabeths jul';
   if(v!=='day')stopGps();
 }
-$('#back').onclick=()=>{closeModal();show('home');renderCal()};
+/* telefonens tilbake-knapp: fra en luke eller Arrangør går den til kalenderen, og et åpent vindu lukkes først */
+function goHome(){closeModal();if(history.state&&history.state.sub)history.back();else{show('home');renderCal()}}
+$('#back').onclick=goHome;
+window.addEventListener('popstate',()=>{
+  if(!$('#modal').hidden&&view!=='home'){closeModal();history.pushState({sub:view},'');return}
+  closeModal();if(view!=='home'){show('home');renderCal()}
+});
 
 /* ======== kalender ======== */
 function renderCal(){
@@ -261,7 +267,7 @@ function startGps(){
 }
 function stopGps(){if(watch!==null){navigator.geolocation.clearWatch(watch);watch=null}}
 function openDay(d){
-  day=d;sim=false;pos=null;fitted=false;show('day','Luke '+d);snow();
+  day=d;sim=false;pos=null;fitted=false;show('day','Luke '+d);history.pushState({sub:'day'},'');snow();
   if(!dmap){dmap=mkMap('dmap');dLayer=L.layerGroup().addTo(dmap);dmap.on('click',e=>{if(sim){pos={lat:e.latlng.lat,lng:e.latlng.lng,acc:5};renderDay()}})}
   setTimeout(()=>{dmap.invalidateSize();fitPeaks(dmap);renderDay()},60);
   startGps();
@@ -300,7 +306,7 @@ function openRiddle(p){
   const done=()=>{s.ok=Date.now();P[p.id]=s;saveProg();closeModal();renderDay();
     if(solvedCount(day)===cfg.peaks.length){snow();const li=dayLetter(day),ch=li>=0?secretLetters()[li]:'';
       modal(`${ch?`<p class="step" style="text-align:center">Ny bokstav i den hemmelige beskjeden</p><div class="newletter">${esc(ch)}</div>`:'<div class="star">★</div>'}<h2>Luke ${day} er fullført!</h2><p>Alle tre toppene er løst. Godt gått!${ch?' Se kalenderen for å se hvor bokstaven hører hjemme.':''}</p><div class="row"><button class="ghost" data-x>Bli her</button><button class="pri" id="tocal">Til kalenderen</button></div>`,
-      b=>{b.querySelector('[data-x]').onclick=closeModal;b.querySelector('#tocal').onclick=()=>{closeModal();show('home');renderCal()}})}};
+      b=>{b.querySelector('[data-x]').onclick=closeModal;b.querySelector('#tocal').onclick=goHome})}};
   modal(`<div class="step">Luke ${day} · ${esc(p.name)}</div><h2>${s.ok?'Dagens gåte':'Du er på toppen!'}</h2><p class="task">${nl(q)}</p>
     ${s.ok?`<p class="msg ok">Løst kl. ${clock(s.ok)}${answers.length?'. Svar: '+esc(String(a).split('|')[0]):''}</p><div class="row"><button class="pri" data-x>Lukk</button></div>`
     :answers.length?`<label class="f">Ditt svar<input id="ans" autocomplete="off" enterkeyhint="done"></label><p class="msg" id="msg"></p>
@@ -318,7 +324,7 @@ function openRiddle(p){
 /* ======== arrangør ======== */
 $('#adm').onclick=()=>confirmBox('Arrangørvisningen viser alle gåter og svar. Vil du åpne den?',openAdmin,'Åpne');
 function openAdmin(){
-  show('admin','Arrangør');$('#t-open').checked=testOpen;
+  show('admin','Arrangør');history.pushState({sub:'admin'},'');$('#t-open').checked=testOpen;
   if(!amap){amap=mkMap('amap');aLayer=L.layerGroup().addTo(amap)}
   setTimeout(()=>{amap.invalidateSize();fitPeaks(amap)},60);
   $('#a-day').innerHTML=Array.from({length:24},(_,i)=>`<option value="${i+1}">Luke ${i+1}</option>`).join('');
@@ -361,7 +367,7 @@ $('#a-secret').oninput=e=>{cfg.secret=e.target.value;saveCfg();secCount()};
 $('#ariddles').addEventListener('input',e=>{if(e.target.id==='a-mission'){cfg.missions[+$('#a-day').value-1]=e.target.value;saveCfg()}});
 $('#ariddles').oninput=e=>{const k=e.target.dataset.k;if(k===undefined)return;cfg.days[+$('#a-day').value-1][+e.target.closest('.rid').dataset.i][+k]=e.target.value;saveCfg()};
 $('#t-open').onchange=e=>{testOpen=e.target.checked;store.set('tk_test',testOpen)};
-$('#hideadm').onclick=()=>confirmBox('Skjule Arrangør-knappen på denne telefonen? Husk å ta bort haken for «Åpne alle luker nå» og nullstille fremdriften først hvis telefonen skal brukes til selve kalenderen.',()=>{adminOn=false;store.set('tk_admin',false);show('home');renderCal()},'Skjul');
+$('#hideadm').onclick=()=>confirmBox('Skjule Arrangør-knappen på denne telefonen? Husk å ta bort haken for «Åpne alle luker nå» og nullstille fremdriften først hvis telefonen skal brukes til selve kalenderen.',()=>{adminOn=false;store.set('tk_admin',false);goHome()},'Skjul');
 $('#reset').onclick=()=>confirmBox('Slette all fremdrift (innsjekk og løste gåter) på denne telefonen?',()=>{prog={};saveProg()},'Nullstill');
 $('#defaults').onclick=()=>confirmBox('Tilbakestille topper og gåter til originalen? Dine endringer forsvinner.',()=>{cfg=clone(DEFAULT);saveCfg();drawAdmin();renderPeaks();renderRiddles();fitPeaks(amap)},'Tilbakestill');
 
