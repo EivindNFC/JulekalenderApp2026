@@ -135,87 +135,14 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 <script>
 {
 /* ======== INNHOLD: topper og gåter (rediger her eller i Arrangør-visningen) ======== */
-const CFG_VERSION=2;
-const DEFAULT={
+const CFG_VERSION=3;
+const DEFAULT={v:3,
  peaks:[
   {id:'g',name:'Gleodden',lat:58.145741,lng:8.034310,radius:100},
   {id:'t',name:'Trollkjerringhei',lat:58.144344,lng:8.020810,radius:100},
   {id:'d',name:'Lille Ravnås',lat:58.185706,lng:8.106551,radius:150}],
  /* hver luke: [Gleodden, Trollkjerringhei, Lille Ravnås] = [gåte, svar (flere med |), hint] */
- days:[
- [["Jeg har nåler, men syr aldri. I desember står jeg pyntet i stua. Hva er jeg?","juletre|juletreet|gran|grantre","Det sitter ofte en stjerne på toppen av meg."],
-  ["Hvor mange luker har en vanlig julekalender?","24|tjuefire|tjuefire","Den siste åpnes på julaften."],
-  ["Hvilket dyr trekker julenissens slede?","reinsdyr|rein|reinsdyret|reinsdyrene","Rudolf er ett av dem."]],
- [["Jo mer du tar bort fra meg, jo større blir jeg. Hva er jeg?","hull|ethull|hullet","Tenk på en spade i sanda."],
-  ["Det er 52 uker i et år og 7 dager i en uke. Hva blir 52 ganger 7?","364","50 × 7 = 350. Legg til 2 × 7."],
-  ["Hvilken farge har nisselua?","rød|rod","Samme farge som denne appen."]],
- [["Jeg er hvit og kald, faller fra himmelen, og ingen av oss er like. Hva er jeg?","snøfnugg|snøkrystall|snø|snofnugg","Jeg lander på votten din."],
-  ["Hva heter grøten fjøsnissen får på julaften?","risengrynsgrøt|risgrøt|grøt|julegrøt","Den har ofte et smørøye i midten."],
-  ["Hvor mange søndager er det i advent?","4|fire","Ett lys for hver av dem i adventsstaken."]],
- [["Hva har hender, men kan ikke klappe?","klokke|enklokke|eiklokke|ur|klokka","Den henger kanskje på veggen og tikker."],
-  ["Hvilken elv renner ut i sjøen midt i Kristiansand?","otra|otraelva","Du krysser den når du går fra Lund til sentrum."],
-  ["Stokk om bokstavene i SNEIS, og du får en julefigur. Hvem?","nisse|nissen","Han har rød lue."]],
- [["Hva går alltid opp, men aldri ned?","alder|alderen","Du får ett år mer hver bursdag."],
-  ["Hvor mange slag julekaker sier tradisjonen at man skal bake?","7|sju|syv","Et tall mellom seks og åtte."],
-  ["Jeg har ett øye, men kan ikke se. Hva er jeg?","nål|synål|ennål|einål|nal","Tråden går gjennom øyet mitt."]],
- [["I dag er det 6. desember. Hvilken dato er det tre dager før dagen etter i morgen? Svar med tall.","5|5.|5.desember|femte","Dagen etter i morgen er den 8."],
-  ["Hvilken region nord i Finland sies å være julenissens hjem?","lappland|lapland|rovaniemi","Navnet starter på L."],
-  ["Hva gjemmes i julegrøten og gir premie til den som finner den?","mandel|mandelen|enmandel","Premien er ofte en marsipangris."]],
- [["Jeg blir våtere jo mer jeg tørker. Hva er jeg?","håndkle|håndkleet|handkle|ethåndkle","Du bruker meg etter dusjen."],
-  ["Regn ut: antall bein på 3 reinsdyr pluss antall bein på 2 nisser.","16|seksten","Reinsdyr har 4 bein, nisser har 2."],
-  ["Hvilken himmelretning må du seile fra Kristiansand for å komme til Danmark?","sør|syd|sørvest|sydvest|sor","Motsatt av nord."]],
- [["Hva kan reise jorden rundt, men blir hele tiden i hjørnet?","frimerke|etfrimerke|frimerket","Det sitter på et julekort."],
-  ["I dag er det 8. desember. Hvor mange dager er det igjen til julaften?","16|seksten","24 minus 8."],
-  ["Hva kaller vi dagen før julaften?","lillejulaften|lille julaften","Den er liten, men har samme navn."]],
- [["Hva har hode og hale, men ingen kropp?","mynt|enmynt|mynten|krone","Du kan kaste den for å bestemme noe."],
-  ["Legg sammen alle tallene fra 1 til 9. Hva blir summen?","45|førtifem","1+9, 2+8, 3+7, 4+6 blir 10 hver. Pluss 5."],
-  ["Hva heter den lille nissen som passer på dyrene på gården?","fjøsnisse|fjøsnissen|gardsnisse|gårdsnisse|tomte","Han bor i fjøset."]],
- [["Jeg har mange tenner, men biter aldri. Hva er jeg?","kam|enkam|eikam|kammen","Du bruker meg i håret."],
-  ["3 nisser pakker 3 gaver på 3 minutter. Hvor mange minutter bruker 100 nisser på 100 gaver?","3|tre","Hver nisse bruker like lang tid på sin gave."],
-  ["Hvor mange reinsdyr har julenissen når Rudolf er med?","9|ni","Åtte i sangen, pluss en med rød nese."]],
- [["Hva må knuses før du kan bruke det?","egg|etegg|egget","Du trenger det til pepperkakedeigen."],
-  ["Hvor mange armer har en snøkrystall?","6|seks","Den er sekskantet."],
-  ["Hva heter den varme, krydrede julevinen?","gløgg|glogg","Den serveres ofte med rosiner og mandler."]],
- [["Jeg er full av hull, men holder likevel på vann. Hva er jeg?","svamp|ensvamp|svampen","Du vasker opp med meg."],
-  ["Når du har åpnet dagens luke, hvor mange luker har du åpnet til sammen?","12|tolv","Du er halvveis."],
-  ["Hvilken norsk by sender hvert år et juletre til Trafalgar Square i London?","oslo","Hovedstaden."]],
- [["Jeg er alltid foran deg, men du kan aldri se meg. Hva er jeg?","fremtiden|framtiden|fremtid|framtid","Den kommer i morgen."],
-  ["Hvilken helgen feires 13. desember med lystog?","lucia|santalucia|luciadagen","Hun har lys i håret."],
-  ["Hva heter de gule bollene med safran vi spiser i dag?","lussekatt|lussekatter|lussekatten","De har rosiner og er formet som en S."]],
- [["Hva har fire bein om morgenen, to midt på dagen og tre om kvelden?","menneske|mennesket|etmenneske","Om kvelden bruker det stokk."],
-  ["Du baker 7 slag kaker og 2 plater av hvert slag. Hvor mange plater blir det?","14|fjorten","7 ganger 2."],
-  ["I hvilken bydel i Kristiansand ligger Gleodden og Trollkjerringhei?","lund","Øst for Otra."]],
- [["Hva blir større jo mer du deler det med andre?","glede|gleden|kjærlighet|kjærligheten","Det kjennes godt i hjertet."],
-  ["Hvor mange timer er det fra midnatt 15. desember til midnatt når julaften starter?","216","Det er 9 døgn. 9 × 24."],
-  ["Hva heter kaken som er formet som et tårn av ringer?","kransekake|kransekaka","Den er laget av mandler og har ofte flagg på."]],
- [["Jeg har tangenter, men ingen dører. Hva er jeg?","piano|etpiano|tastatur|klaver|flygel","Du kan spille julesanger på meg."],
-  ["Hvilket tall kommer etter: 2, 4, 8, 16, …?","32|trettito","Hvert tall dobles."],
-  ["Hvilken plante henger vi opp og kysser under?","misteltein|mistelteinen|mistelten","Den har hvite bær."]],
- [["Hva kan du fange, men ikke kaste?","forkjølelse|forkjolelse|snue|enforkjølelse","Du nyser av den."],
-  ["Hvor mange ganger sier nissen «ho» når han ler?","3|tre","Ho ho …"],
-  ["Hva heter det søte godteriet som ofte formes som en liten gris?","marsipan|marsipangris","Det er laget av mandler og sukker."]],
- [["Jeg har hode og fot og fire bein, men går aldri. Hva er jeg?","seng|eiseng|enseng|senga","Du sover i meg."],
-  ["Hvor mange minutter er det i 6 timer?","360|trehundreogseksti","60 × 6."],
-  ["Hva heter den røde kålen som ofte serveres til ribba?","rødkål|rodkal|rødkålen","Den er rød og syrlig."]],
- [["Jeg er lett som en fjær, men ingen kan holde meg lenge. Hva er jeg?","pust|pusten|åndedrett|åndedrag","Du kan holde den under vann."],
-  ["Hvor mange måneder har 28 dager?","12|tolv|alle","Ikke bare februar …"],
-  ["Hva heter julematen som lages av tørrfisk lagt i lut?","lutefisk|lutefisken","Den skjelver på tallerkenen."]],
- [["Jeg har munn, men spiser aldri, og seng, men sover aldri. Hva er jeg?","elv|eielv|enelv|elva","Otra er en av oss."],
-  ["Hvis du går tre topper hver dag i alle 24 dagene, hvor mange toppbesøk blir det?","72|syttito","3 × 24."],
-  ["Over hvilken by sto stjerna i juleevangeliet?","betlehem|betlehemsstjerna","Byen der Jesus ble født."]],
- [["Jeg forsvinner med en gang du sier navnet mitt. Hva er jeg?","stillhet|stillheten","Shh …"],
-  ["Hvor mange dager har desember?","31|trettien|trettiein","En dag mer enn november."],
-  ["I dag eller i morgen er årets korteste dag. Hva kaller vi det?","vintersolverv|solverv|solsnu","Etter dette blir dagene lengre."]],
- [["Jeg har mange ringer, men ingen fingre. Hva er jeg?","tre|ettre|treet|trestamme","Ringene mine viser hvor gammel jeg er."],
-  ["Hvilken båt har et navn som staves likt forlengs og baklengs?","kajakk","Du padler den."],
-  ["Hva heter kvelden vi feirer 31. desember?","nyttårsaften|nyttår|nyttarsaften","Det smeller i raketter."]],
- [["Hva kan fylle et helt rom uten å ta plass?","lys|lyset","Tenn et stearinlys og se."],
-  ["Det er lillejulaften. Hvor mange luker er igjen etter dagens?","1|en|én|ein","Bare én til!"],
-  ["Hvor mange vinger har en engel?","2|to","Like mange som en fugl."]],
- [["God jul! Hva sier vi til hverandre i dag?","godjul|gledeligjul","To ord, det første er «god»."],
-  ["Hvor mange bokstaver er det i ordet JULAFTEN?","8|åtte","Tell dem en og en."],
-  ["Du har klart alle 24 lukene og 72 toppbesøk. Gratulerer! Gå hjem, for der venter en overraskelse.","",""]]
- ]};
+ days:[[["Tallrekke: 2, 3, 5, 9, 17, 33, … Hvilket tall kommer neste?", "65", "Se på forskjellene mellom tallene. De dobles hver gang."], ["En flaske med kork koster 110 kr. Flasken koster 100 kr mer enn korken. Hvor mange kroner koster korken?", "5|5kr|femkroner|fem", "Svaret er ikke 10. Prøv å sette opp regnestykket: kork + (kork + 100) = 110."], ["Hemmelig kode. Hver bokstav er flyttet ett hakk frem i alfabetet (A ble B, B ble C …). Hva står det? KVMFUSF", "juletre", "Flytt hver bokstav ett hakk tilbake: K blir J."]], [["En snegl kryper opp en 10 meter høy stang. Hver dag kryper den 3 meter opp, og hver natt sklir den 2 meter ned. Hvilken dag når den toppen?", "8|åttende|dag8", "Den kommer 1 meter nærmere per døgn, men den siste dagen sklir den ikke ned igjen."], ["Finn det minste positive heltallet som gir rest 1 når det deles på 2, 3, 4, 5 og 6, men som går opp i 7.", "301", "Tall som gir rest 1 for alle fra 2 til 6, er 60 · k + 1. Prøv k = 1, 2, 3 …"], ["Marits mor har fem døtre: Nana, Nene, Nini og Nono. Hva heter den femte datteren?", "marit", "Les første ord i oppgaven en gang til."]], [["Klokka er 3:15. Hvor mange grader er det mellom timeviseren og minuttviseren?", "7,5|7.5|7,5grader|7.5grader", "Timeviseren står ikke på 3. Den har gått en fjerdedel av veien mot 4, og hver time er 30 grader."], ["Tallrekke: 3, 4, 6, 9, 13, 18, … Hvilket tall kommer neste?", "24", "Se på forskjellene: 1, 2, 3, 4, 5 …"], ["Stokk om bokstavene og finn et juleord: R E P P E K A K E P", "pepperkake|pepperkaker", "Det bakes i desember og er brunt og sprøtt."]], [["To fedre og to sønner deler tre epler, og alle får ett helt eple hver. Hvor mange personer er det?", "3|tre", "En person kan være både far og sønn."], ["En far og en sønn er til sammen 66 år. Farens alder er sønnens alder med sifrene byttet om. Faren var over 20 år da sønnen ble født. Hvor gammel er sønnen?", "15|femten", "Prøv par som 24 og 42, 15 og 51 … Hvilket par har stor nok aldersforskjell?"], ["Kode: Hver bokstav er flyttet tre plasser frem i alfabetet (A ble D). Hva står det? QLVVH", "nisse", "Q blir N, L blir I …"]], [["Tallrekke: 1, 11, 21, 1211, 111221, … Hvilket tall kommer neste?", "312211", "Les hvert tall høyt: «én ener», «to enere», «én toer, én ener» …"], ["Du har en 3-liters og en 5-liters bøtte og en kran. Hva er det minste antall ganger du må fylle en bøtte fra kranen for å få nøyaktig 4 liter i 5-literen?", "2|to", "Fyll 5-literen og hell over i 3-literen. Da har du 2 liter igjen. Hva gjør du videre?"], ["Hvilket ord kan stå foran MANN, BALL og FNUGG?", "snø", "Det er hvitt og kaldt."]], [["Hvis 1. desember er en tirsdag, hvilken ukedag er da julaften?", "torsdag", "Julaften er 23 dager senere. 23 = 3 uker + 2 dager."], ["Hva er det dobbelte av halvparten av en fjerdedel av 400?", "100|hundre|ethundre", "«Det dobbelte av halvparten» opphever hverandre."], ["Anne er høyere enn Bjørn. Carl er lavere enn Bjørn. Dina er høyere enn Anne. Hvem er nest lavest?", "bjørn|bjorn", "Sett dem i rekkefølge fra høyest til lavest."]], [["Tre esker er merket «Epler», «Appelsiner» og «Blandet», og alle merkelappene er feil. Du får trekke én frukt fra én eske, og så skal du vite innholdet i alle tre. Hvilken eske trekker du fra?", "blandet|blandetesken|esken blandet|denblandede", "Den merket «Blandet» kan ikke være blandet. Den inneholder bare én sort."], ["Et positivt tall ganget med seg selv, minus 1, blir 168. Hvilket tall er det?", "13|tretten", "Hvilket tall i andre blir 169?"], ["Kode: Hver bokstav er flyttet ett hakk frem. Hva står det? SFJOTEZS", "reinsdyr|reinsdyret", "S blir R, F blir E …"]], [["Et tog kjører i 60 km/t i 30 minutter, så i 90 km/t i 20 minutter. Hvor mange kilometer har det kjørt?", "60|60km|seksti", "Regn hver del for seg: 30 min er en halv time, 20 min er en tredjedel."], ["Hvilken bokstav kommer neste: J, F, M, A, M, J, J, A, …?", "s", "Tenk på kalenderen. Hva starter med J, F, M …?"], ["Har du meg, vil du dele meg. Deler du meg, har du meg ikke lenger. Hva er jeg?", "hemmelighet|enhemmelighet|hemmeligheten|hemmelighed", "Du hvisker meg bare til noen du stoler på."]], [["Fem nisser har en gjennomsnittsalder på 40 år. Når Nissefar blir med, blir snittet 45 år. Hvor gammel er Nissefar?", "70|sytti", "Regn ut den totale alderen før og etter."], ["Tallrekke: 2, 6, 12, 20, 30, … Hvilket tall kommer neste?", "42|førtito", "1·2, 2·3, 3·4 …"], ["En mann ser på et bilde og sier: «Søsken har jeg ingen, men denne mannens far er min fars sønn.» Hvem er på bildet?", "sønnen|sønn|sønnenhans|minsønn|hanssønn|sonnen", "Hvem er «min fars sønn» når han ikke har søsken?"]], [["Hvor mange ganger skriver du sifferet 1 når du skriver alle tallene fra 1 til 100?", "21|tjueen|tjueén", "Tell enerne og tierne hver for seg, og ikke glem 100."], ["Bakteriene i en flaske dobles hvert minutt, og etter 60 minutter er flasken full. Etter hvor mange minutter var den halvfull?", "59|femtini", "Hva skjer i løpet av det siste minuttet?"], ["Hvilket ord kan stå bak SNØ, REGN og HAGL og lage tre værord?", "byge|byger", "Kraftig nedbør som varer kort."]], [["Finn det tresifrede partallet der hundrersifferet er tre ganger tiersifferet og tiersifferet er to mer enn enersifferet.", "620", "Tiersifferet kan bare være 1, 2 eller 3. Hvorfor?"], ["I forgårs var det to dager etter mandag. Hvilken dag er det i morgen?", "lørdag|lordag", "Finn først hvilken dag det var i forgårs."], ["Med A = 1, B = 2 … Z = 26: hva er summen av bokstavene i JUL?", "43|førtitre", "J = 10, U = 21, L = 12."]], [["En bonde skal få en ulv, en geit og et kålhode over ei elv. Båten tar bare én ting om gangen. Ulven spiser geita og geita spiser kålen hvis de er alene sammen. Hva tar han med seg først?", "geit|geita|geiten", "Ulven spiser ikke kål."], ["Tre brytere utenfor et lukket rom styrer tre lyspærer inne. Du får gå inn én gang. Du slår på bryter 1 i ti minutter, slår den av, slår på bryter 2 og går inn. Én pære lyser. Hva sjekker du for å vite hvilken av de to slukkede pærene som hører til bryter 1?", "varme|varm|temperatur|temperaturen|varmen", "Bruk en annen sans enn synet."], ["Hva er 12 % av 50 pluss 50 % av 12?", "12|tolv", "x % av y er det samme som y % av x."]], [["Et Lucia-tog har 13 personer. Hvor mange forskjellige par kan du lage når du tar to og to?", "78|syttiåtte", "Hver person kan pares med 12 andre, men da teller du hvert par to ganger."], ["Kode: Hver bokstav er flyttet to plasser frem. Hva står det? NWEKC", "lucia", "N blir L, W blir U …"], ["Tallrekke: 0, 1, 1, 2, 4, 7, 13, 24, … Hvilket tall kommer neste?", "44|førtifire", "Hvert tall er summen av de tre før det."]], [["Jo flere du tar, jo flere legger du bak deg. Hva er det?", "skritt|steg|fotspor|skrittene|stegene", "Du har tatt mange av dem på vei opp hit."], ["Summen av to tall er 20, og produktet er 96. Hva er det største av tallene?", "12|tolv", "Prøv par som summerer til 20: 10 og 10, 11 og 9 …"], ["Hvor mange kvadrater av alle størrelser finnes på et sjakkbrett med 8 × 8 ruter?", "204|tohundreogfire", "Det finnes 64 små, 49 av størrelse 2 × 2, 36 av størrelse 3 × 3 …"]], [["3 nisser er verdt like mye som 2 alver, og 4 alver er verdt like mye som 6 troll. Hvor mange troll er 6 nisser verdt?", "6|seks", "6 nisser er verdt 4 alver."], ["En mandag er dag 0. Hvilken ukedag er det 100 dager senere?", "onsdag", "100 = 14 uker + 2 dager."], ["Med A = 1, B = 2 osv., hvilket juleord er 18-9-2-2-5?", "ribbe", "R er bokstav nummer 18."]], [["Det tar 4 minutter å koke ett egg. Hvor mange minutter tar det å koke 4 egg samtidig i samme kjele?", "4|fire", "De koker samtidig."], ["Tallrekke: 1, 2, 6, 24, 120, … Hvilket tall kommer neste?", "720", "Hvert tall ganges med 2, 3, 4, 5 …"], ["En gutt har like mange brødre som søstre. Hver av søstrene hans har dobbelt så mange brødre som søstre. Hvor mange barn er det i familien?", "7|sju|syv", "Prøv deg frem med 4 gutter."]], [["Hvilket firesifret tall blir fire ganger så stort når du leser det baklengs?", "2178", "Det starter med 2, og baklengs starter det med 8."], ["Hvor mange ganger i løpet av et døgn står timeviseren og minuttviseren nøyaktig over hverandre?", "22|tjueto", "Det skjer ikke helt hver time. Mellom 11 og 1 skjer det bare én gang."], ["Hvilket ord kan stå foran KAKE, NØTT og KVERN?", "pepper", "Et krydder."]], [["Summen av tre heltall som kommer etter hverandre, er 72. Hva er det største av dem?", "25|tjuefem", "Det midterste tallet er 72 delt på 3."], ["En båt ligger fortøyd med en stige på siden, og 4 trinn er over vannet. Tidevannet stiger 50 cm. Hvor mange trinn er over vannet nå?", "4|fire", "Hva skjer med båten når vannet stiger?"], ["Les baklengs: NETFALUJ", "julaften", "Start med den siste bokstaven."]], [["Det tar 6 minutter å sage en stokk i 3 deler. Hvor mange minutter tar det å sage en lik stokk i 6 deler?", "15|femten", "3 deler krever bare 2 kutt."], ["Hvilken bokstav kommer neste: E, T, T, F, F, S, S, …?", "å", "Tell på norsk: en, to, tre …"], ["En nisse sier: «Jeg lyver alltid.» Kan det han sier være sant? Svar ja eller nei.", "nei", "Hvis det var sant, ville han ha sagt noe sant …"]], [["Hvor mange nuller er det på slutten av 1 · 2 · 3 · … · 10?", "2|to", "Tell hvor mange ganger 5 inngår som faktor."], ["To dører: den ene leder til toppen og den andre til myra. Én vakt lyver alltid, og den andre sier alltid sannheten. Du spør én av dem: «Hvilken dør ville den andre vakta si leder til toppen?» Velger du døra han peker på, eller den andre?", "denandre|andre|denandredøra|motsatt", "Svaret går gjennom én løgner uansett hvem du spør."], ["Et tall pluss 5, delt på 3, blir 7. Hvilket tall er det?", "16|seksten", "Gå baklengs: 7 · 3 − 5."]], [["Et vanlig år har 365 dager. Hvor mange dager blir til overs når du deler året i hele uker?", "1|en|én|ein", "52 · 7 = 364."], ["Hvilket ord kan stå bak SKOG, VEI og VANN?", "kant", "Der det ene slutter og noe annet begynner."], ["Hva er det største antall biter du kan dele en pizza i med 4 rette kutt? (Bitene trenger ikke være like store.)", "11|elleve", "Hvert nytt kutt bør krysse alle de tidligere: 2, 4, 7 …"]], [["Hva er 1 + 2 + 3 + … + 100?", "5050", "Par opp 1 + 100, 2 + 99 … Hvor mange slike par blir det?"], ["Tallrekke: 1, 3, 7, 15, 31, … Hvilket tall kommer neste?", "63|sekstitre", "Gang med 2 og legg til 1."], ["Jeg har taster, men ingen lås. Jeg har mellomrom, men ingen rom. Du kan trykke Enter, men kommer ikke inn. Hva er jeg?", "tastatur|tastaturet|ettastatur|keyboard", "Du skriver på meg."]], [["En skuff har 10 røde og 10 hvite sokker, og det er mørkt. Hvor mange sokker må du minst ta ut for å være sikker på å få et par med samme farge?", "3|tre", "Det finnes bare to farger."], ["Samme skuff: 10 røde og 10 hvite sokker i mørket. Hvor mange må du minst ta ut for å være sikker på å få to røde?", "12|tolv", "Tenk deg det verst tenkelige: alle de hvite kommer først."], ["Nissen har 30 pakker. I første hus gir han bort halvparten pluss én. I neste hus gir han bort halvparten av resten pluss én. Hvor mange pakker har han igjen?", "6|seks", "Etter første hus har han 14 igjen."]], [["Hvilket tall mellom 1 og 100 er både et kvadrattall og et kubikktall?", "64|sekstifire", "Det er både 8 · 8 og 4 · 4 · 4."], ["Hvor mange minutter er det fra klokka 12:00 på julaften til klokka 17:00, når kirkeklokkene ringer julen inn?", "300|trehundre", "5 timer."], ["Du har klart alle 24 lukene og 72 toppbesøk. Gratulerer! Gå hjem, for der venter en overraskelse.", "", ""]]]};
 
 /* ======== hjelpere ======== */
 const $=s=>document.querySelector(s);
@@ -226,8 +153,8 @@ const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v)
   set(k,v){mem[k]=v;try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const clone=o=>JSON.parse(JSON.stringify(o));
 let cfg=store.get('tk_cfg',null);if(!cfg||!Array.isArray(cfg.days)||cfg.days.length!==24)cfg=clone(DEFAULT);
-/* nye topper i en ny versjon erstatter gamle lagrede topper, men egne gåter beholdes */
-if(cfg.v!==CFG_VERSION){cfg.peaks=clone(DEFAULT.peaks);cfg.v=CFG_VERSION;store.set('tk_cfg',cfg)}
+/* ny versjon av innholdet erstatter det som er lagret på telefonen */
+if(cfg.v!==CFG_VERSION){cfg=clone(DEFAULT);cfg.v=CFG_VERSION;store.set('tk_cfg',cfg)}
 let prog=store.get('tk_prog',{});   /* prog[day][peakId] = {in:time, ok:time} */
 let testOpen=store.get('tk_test',false);
 const saveCfg=()=>store.set('tk_cfg',cfg),saveProg=()=>store.set('tk_prog',prog);
@@ -404,7 +331,7 @@ $('#share').onclick=()=>{
 };
 function importCfg(raw){let s=String(raw||'').trim();const k=s.indexOf('kal=');if(k>=0)s=s.slice(k+4);
   const c=dec(s);if(!c||!Array.isArray(c.peaks)||c.peaks.length!==3||!Array.isArray(c.days)||c.days.length!==24)throw new Error('ugyldig');
-  cfg=c;saveCfg()}
+  c.v=CFG_VERSION;cfg=c;saveCfg()}
 $('#imp').onclick=()=>modal(`<h2>Importer kalender</h2><label class="f">Lim inn lenken<textarea id="it"></textarea></label><p class="msg" id="im"></p>
   <div class="row"><button class="ghost" data-x>Avbryt</button><button class="pri" id="ig">Importer</button></div>`,
   b=>{b.querySelector('[data-x]').onclick=closeModal;b.querySelector('#ig').onclick=()=>{try{importCfg($('#it').value);closeModal();drawAdmin();renderPeaks();renderRiddles();info('<p>Kalenderen er importert.</p>')}catch(e){$('#im').textContent='Fant ingen gyldig kalender i teksten.'}}});
