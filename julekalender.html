@@ -96,7 +96,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 <main>
   <section id="v-home"><div class="scrollv">
     <h2>24 luker, tre topper</h2>
-    <p class="lead">Åpne dagens luke og gå til Gleodden, Trollkjerringhei og Duekniben. På hver topp sjekker du inn og får dagens gåte. Løs alle tre for å fullføre luka.</p>
+    <p class="lead">Åpne dagens luke og gå til Gleodden, Trollkjerringhei og Lille Ravnås. På hver topp sjekker du inn og får dagens gåte. Løs alle tre for å fullføre luka.</p>
     <div class="cal" id="cal"></div>
     <p class="legend">Rød luke: klar til å åpnes. Prikkene viser hvor mange topper som er løst. Hvit luke med stjerne: fullført.</p>
   </div></section>
@@ -132,12 +132,13 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 <script>
 {
 /* ======== INNHOLD: topper og gåter (rediger her eller i Arrangør-visningen) ======== */
+const CFG_VERSION=2;
 const DEFAULT={
  peaks:[
-  {id:'g',name:'Gleodden',lat:58.14425,lng:8.03481,radius:80},
-  {id:'t',name:'Trollkjerringhei',lat:58.1446,lng:8.0222,radius:120},
-  {id:'d',name:'Duekniben',lat:58.14421,lng:7.97396,radius:80}],
- /* hver luke: [Gleodden, Trollkjerringhei, Duekniben] = [gåte, svar (flere med |), hint] */
+  {id:'g',name:'Gleodden',lat:58.145741,lng:8.034310,radius:100},
+  {id:'t',name:'Trollkjerringhei',lat:58.144344,lng:8.020810,radius:100},
+  {id:'d',name:'Lille Ravnås',lat:58.185706,lng:8.106551,radius:150}],
+ /* hver luke: [Gleodden, Trollkjerringhei, Lille Ravnås] = [gåte, svar (flere med |), hint] */
  days:[
  [["Jeg har nåler, men syr aldri. I desember står jeg pyntet i stua. Hva er jeg?","juletre|juletreet|gran|grantre","Det sitter ofte en stjerne på toppen av meg."],
   ["Hvor mange luker har en vanlig julekalender?","24|tjuefire|tjuefire","Den siste åpnes på julaften."],
@@ -149,7 +150,7 @@ const DEFAULT={
   ["Hva heter grøten fjøsnissen får på julaften?","risengrynsgrøt|risgrøt|grøt|julegrøt","Den har ofte et smørøye i midten."],
   ["Hvor mange søndager er det i advent?","4|fire","Ett lys for hver av dem i adventsstaken."]],
  [["Hva har hender, men kan ikke klappe?","klokke|enklokke|eiklokke|ur|klokka","Den henger kanskje på veggen og tikker."],
-  ["Hvilken elv renner ut i sjøen midt i Kristiansand?","otra|otraelva","Du krysser den når du går fra Lund til Duekniben."],
+  ["Hvilken elv renner ut i sjøen midt i Kristiansand?","otra|otraelva","Du krysser den når du går fra Lund til sentrum."],
   ["Stokk om bokstavene i SNEIS, og du får en julefigur. Hvem?","nisse|nissen","Han har rød lue."]],
  [["Hva går alltid opp, men aldri ned?","alder|alderen","Du får ett år mer hver bursdag."],
   ["Hvor mange slag julekaker sier tradisjonen at man skal bake?","7|sju|syv","Et tall mellom seks og åtte."],
@@ -222,6 +223,8 @@ const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v)
   set(k,v){mem[k]=v;try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const clone=o=>JSON.parse(JSON.stringify(o));
 let cfg=store.get('tk_cfg',null);if(!cfg||!Array.isArray(cfg.days)||cfg.days.length!==24)cfg=clone(DEFAULT);
+/* nye topper i en ny versjon erstatter gamle lagrede topper, men egne gåter beholdes */
+if(cfg.v!==CFG_VERSION){cfg.peaks=clone(DEFAULT.peaks);cfg.v=CFG_VERSION;store.set('tk_cfg',cfg)}
 let prog=store.get('tk_prog',{});   /* prog[day][peakId] = {in:time, ok:time} */
 let testOpen=store.get('tk_test',false);
 const saveCfg=()=>store.set('tk_cfg',cfg),saveProg=()=>store.set('tk_prog',prog);
