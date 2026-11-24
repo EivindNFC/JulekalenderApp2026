@@ -88,6 +88,21 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .star{font-size:56px;line-height:1;color:var(--red);text-align:center;margin:4px 0 8px}
 @media(prefers-reduced-motion:reduce){.pulse{animation:none}}
 .rid{border-top:1px solid var(--line);padding-top:10px;margin-top:12px}
+.secret{display:flex;flex-wrap:wrap;gap:12px 18px;margin-top:10px}
+.secret .w{display:flex;gap:4px}
+.secret span{width:28px;height:36px;border-radius:6px;display:grid;place-items:center;font:700 20px 'Barlow Condensed',sans-serif;background:var(--bg);border:2px dashed var(--line);color:var(--mute)}
+.secret span.on{background:var(--red);border:2px solid var(--red);color:#fff}
+.stats{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:12px;font-size:15px}
+.stats b{font:700 26px 'Barlow Condensed',sans-serif;color:var(--red);margin-right:4px}
+.mission{display:flex;gap:10px;align-items:center;background:var(--panel);border-radius:10px;padding:8px 10px;margin:8px 0 4px}
+.mission p{margin:0;flex:1;font-size:15px}
+.mission b{display:block;font-size:13px;color:var(--mute);font-weight:600}
+.mission button{flex:none;padding:0 12px}
+.newletter{font:700 64px/1 'Barlow Condensed',sans-serif;color:#fff;background:var(--red);width:84px;height:96px;border-radius:12px;display:grid;place-items:center;margin:4px auto 10px}
+#snow{position:fixed;inset:0;pointer-events:none;z-index:1500;overflow:hidden}
+#snow i{position:absolute;top:-12px;width:8px;height:8px;border-radius:50%;background:#fff;box-shadow:0 0 3px rgba(0,0,0,.35);animation:fall linear forwards}
+@keyframes fall{to{transform:translate(var(--dx),105vh)}}
+@media(prefers-reduced-motion:reduce){#snow{display:none}}
 </style>
 </head>
 <body>
@@ -101,6 +116,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
     <h2>24 luker, tre topper</h2>
     <p class="lead">Åpne dagens luke og gå til Gleodden, Trollkjerringhei og Lille Ravnås. På hver topp sjekker du inn og får dagens gåte. Løs alle tre for å fullføre luka.</p>
     <div class="cal" id="cal"></div>
+    <div class="box"><h3>Hemmelig beskjed</h3><p class="lead" style="margin:4px 0 0">Hver fullførte luke gir én bokstav. Kan du gjette beskjeden før julaften?</p><div class="secret" id="secret"></div>
+      <div class="stats" id="stats"></div></div>
     <p class="legend">Rød luke: klar til å åpnes. Prikkene viser hvor mange topper som er løst. Hvit luke med stjerne: fullført.</p>
   </div></section>
 
@@ -124,7 +141,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
         <p class="f">Etter dette vises ikke knappen på denne telefonen. Åpne lenken med <b>#arrangor</b> bakerst for å få den tilbake.</p>
       </div>
       <div class="box">
-        <h3>Gåter</h3>
+        <h3>Gåter og oppdrag</h3>
+        <label class="f">Hemmelig beskjed (helst 24 bokstaver, mellomrom teller ikke)<input id="a-secret" autocomplete="off"></label><p class="f" id="a-seccount"></p>
         <label class="f">Luke<select id="a-day"></select></label>
         <div id="ariddles"></div>
       </div>
@@ -132,13 +150,18 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
   </section>
 </main>
 <div id="modal" hidden><div id="mbody"></div></div>
+<div id="snow" aria-hidden="true"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 {
 /* ======== INNHOLD: topper og gåter (rediger her eller i Arrangør-visningen) ======== */
-const CFG_VERSION=3;
-const DEFAULT={v:3,
+const CFG_VERSION=4;
+const DEFAULT={v:4,
+ /* hemmelig beskjed: én bokstav for hver fullført luke (helst 24 bokstaver) */
+ secret:"DU HAR BESTEGET ALLE TOPPENE",
+ /* dagens oppdrag, ett per luke */
+ missions:["Rop «God jul!» ut over utsikten fra en av toppene.", "Finn en fin kongle og ta den med hjem som julepynt.", "Ta et bilde av dagens utsikt fra Lille Ravnås.", "Finn en stein som ligner et hjerte.", "Nynn en julesang hele veien opp den siste bakken.", "Si «god jul» til tre personer du møter på tur i dag.", "Finn noe grønt, noe rødt og noe hvitt i naturen.", "Ta en selfie med det rareste treet du ser i dag.", "Tell hvor mange båter du ser fra Gleodden.", "Ta med termos og drikk noe varmt på en av toppene.", "Se etter spor etter et dyr. Hvilket dyr tror du det var?", "Stå helt stille i ett minutt på en topp og lytt. Hvor mange ulike lyder hører du?", "Luciadagen: ta med en lussekatt og spis den på en av toppene.", "Lag et hjerte av kvister og ta et bilde av det.", "Send et bilde fra en topp til noen du er glad i.", "Gi utsikten på hver topp et terningkast. Hvilken vinner i dag?", "Velg en sti du aldri har gått før til en av toppene.", "Plukk med deg tre biter søppel på turen.", "Ta ti knebøy på toppen av Trollkjerringhei.", "Finn et sted der du ser både byen og sjøen, og ta et panoramabilde.", "Vintersolverv: gå en av toppene med hodelykt i mørket hvis du kjenner stien godt.", "Ta med en venn til en av toppene i dag.", "Lillejulaften: ta med pepperkaker og del dem med noen på tur.", "Julaften: stopp opp på den siste toppen og tenk på årets beste tur."],
  peaks:[
   {id:'g',name:'Gleodden',lat:58.145741,lng:8.034310,radius:100},
   {id:'t',name:'Trollkjerringhei',lat:58.144344,lng:8.020810,radius:100},
@@ -154,9 +177,10 @@ const mem={};
 const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return k in mem?mem[k]:d}},
   set(k,v){mem[k]=v;try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const clone=o=>JSON.parse(JSON.stringify(o));
+function fillCfg(c){if(!Array.isArray(c.missions)||c.missions.length!==24)c.missions=clone(DEFAULT.missions);if(typeof c.secret!=='string')c.secret=DEFAULT.secret;return c}
 let cfg=store.get('tk_cfg',null);if(!cfg||!Array.isArray(cfg.days)||cfg.days.length!==24)cfg=clone(DEFAULT);
 /* ny versjon av innholdet erstatter det som er lagret på telefonen */
-if(cfg.v!==CFG_VERSION){cfg=clone(DEFAULT);cfg.v=CFG_VERSION;store.set('tk_cfg',cfg)}
+if(cfg.v!==CFG_VERSION){if((cfg.v||0)<3)cfg=clone(DEFAULT);fillCfg(cfg);cfg.v=CFG_VERSION;store.set('tk_cfg',cfg)}
 let prog=store.get('tk_prog',{});   /* prog[day][peakId] = {in:time, ok:time} */
 let testOpen=store.get('tk_test',false);
 /* Arrangør-knappen vises bare på telefoner som har åpnet lenken med #arrangor */
@@ -211,7 +235,18 @@ function renderCal(){
     const sub=all?'★ Fullført':open?(n?`${n} av 3 løst`:'Åpne'):`${d}. des`;
     return `<button class="door ${cls} ${d===t?'today':''}" data-d="${d}" aria-label="Luke ${d}, ${sub}"><b>${d}</b>
       <span><span class="dots">${cfg.peaks.map(p=>`<i class="${prog[d]?.[p.id]?.ok?'on':''}"></i>`).join('')}</span><small>${sub}</small></span></button>`}).join('');
+  const got=revealed();
+  $('#secret').innerHTML=secretWords().map(w=>`<span class="w">${w.map(([ch,k])=>`<span class="${got.has(k)?'on':''}">${got.has(k)?esc(ch):''}</span>`).join('')}</span>`).join('');
+  let peaks=0,days=0,miss=0;for(let d=1;d<=24;d++){const n=solvedCount(d);peaks+=n;if(n===cfg.peaks.length)days++;if(prog[d]?.mission)miss++}
+  $('#stats').innerHTML=`<span><b>${peaks}</b>av 72 topper</span><span><b>${days}</b>av 24 luker</span><span><b>${miss}</b>oppdrag utført</span>`;
 }
+/* hemmelig beskjed: bokstavene deles ut i en fast, blandet rekkefølge */
+function secretLetters(){const L=[];[...String(cfg.secret||'').toUpperCase()].forEach(ch=>{if(ch.trim())L.push(ch)});return L}
+function secretWords(){let k=0;return String(cfg.secret||'').toUpperCase().split(/\s+/).filter(Boolean).map(w=>[...w].map(ch=>[ch,k++]))}
+function letterOrder(){const n=secretLetters().length,o=[...Array(n).keys()];let x=7;for(let i=n-1;i>0;i--){x=(x*9301+49297)%233280;const j=Math.floor(x/233280*(i+1));[o[i],o[j]]=[o[j],o[i]]}return o}
+const dayLetter=d=>{const o=letterOrder();return d-1<o.length?o[d-1]:-1};
+function revealed(){const s=new Set();for(let d=1;d<=24;d++)if(solvedCount(d)===cfg.peaks.length&&dayLetter(d)>=0)s.add(dayLetter(d));return s}
+function snow(){const el=$('#snow');el.innerHTML=Array.from({length:40},()=>`<i style="left:${Math.random()*100}%;--dx:${Math.round(Math.random()*80-40)}px;animation-duration:${(2.5+Math.random()*2.5).toFixed(2)}s;animation-delay:${(Math.random()*1.2).toFixed(2)}s;opacity:${(.6+Math.random()*.4).toFixed(2)};transform:scale(${(.5+Math.random()).toFixed(2)})"></i>`).join('');clearTimeout(snow.t);snow.t=setTimeout(()=>el.innerHTML='',6500)}
 $('#cal').onclick=e=>{const b=e.target.closest('.door');if(!b)return;const d=+b.dataset.d;
   if(!isOpen(d))return info(`<h2>Ikke ennå!</h2><p>Luke ${d} kan åpnes ${d}. desember.</p>`);openDay(d)};
 
@@ -226,7 +261,7 @@ function startGps(){
 }
 function stopGps(){if(watch!==null){navigator.geolocation.clearWatch(watch);watch=null}}
 function openDay(d){
-  day=d;sim=false;pos=null;fitted=false;show('day','Luke '+d);
+  day=d;sim=false;pos=null;fitted=false;show('day','Luke '+d);snow();
   if(!dmap){dmap=mkMap('dmap');dLayer=L.layerGroup().addTo(dmap);dmap.on('click',e=>{if(sim){pos={lat:e.latlng.lat,lng:e.latlng.lng,acc:5};renderDay()}})}
   setTimeout(()=>{dmap.invalidateSize();fitPeaks(dmap);renderDay()},60);
   startGps();
@@ -247,12 +282,15 @@ function renderDay(){
     else if(near(p)){st='Du er på toppen!';btn=`<button class="pri pulse" data-a="in" data-p="${p.id}">Sjekk inn</button>`}
     else{st=pos?`${fmt(dist(pos,p))} unna, mot ${DIRS[Math.round(bearing(pos,p)/45)%8]}`:(gpsErr||'Venter på GPS …');btn=`<button class="pri" disabled>Sjekk inn</button>`}
     return `<div class="peak"><span class="num ${s.ok?'ok':''}">${s.ok?'✓':i+1}</span><div><div class="nm">${esc(p.name)}</div><div class="st">${esc(st)}</div></div>${btn}</div>`}).join('');
-  $('#panel').innerHTML=`<div class="step">Luke ${day} · ${n} av ${cfg.peaks.length} topper løst${pos&&!sim?` · GPS ±${Math.round(pos.acc)} m`:''}</div>${rows}
+  const mi=cfg.missions[day-1],md=P.mission;
+  $('#panel').innerHTML=`<div class="step">Luke ${day} · ${n} av ${cfg.peaks.length} topper løst${pos&&!sim?` · GPS ±${Math.round(pos.acc)} m`:''}</div>
+    ${mi?`<div class="mission"><p><b>Dagens oppdrag${md?' · utført':''}</b>${esc(mi)}</p><button class="${md?'ghost':'pri'}" data-a="mission">${md?'Angre':'Utført'}</button></div>`:''}${rows}
     <div class="tools"><label><input type="checkbox" id="sim" ${sim?'checked':''}> Testmodus: trykk på kartet for å flytte deg</label></div>`;
   $('#sim').onchange=e=>{sim=e.target.checked;if(!sim){pos=null;stopGps();startGps()}renderDay()};
 }
 $('#panel').addEventListener('click',e=>{
   const b=e.target.closest('button[data-a]');if(!b)return;const p=cfg.peaks.find(x=>x.id===b.dataset.p),P=dp(day);
+  if(b.dataset.a==='mission'){if(P.mission)delete P.mission;else{P.mission=Date.now();snow()}saveProg();renderDay();return}
   if(b.dataset.a==='in'){P[p.id]={in:Date.now()};saveProg();renderDay();openRiddle(p)}
   else openRiddle(p);
 });
@@ -260,8 +298,9 @@ function openRiddle(p){
   const i=cfg.peaks.indexOf(p),[q,a,h]=cfg.days[day-1][i],P=dp(day),s=P[p.id]||{};
   const answers=String(a||'').split('|').map(norm).filter(Boolean);
   const done=()=>{s.ok=Date.now();P[p.id]=s;saveProg();closeModal();renderDay();
-    if(solvedCount(day)===cfg.peaks.length)modal(`<div class="star">★</div><h2>Luke ${day} er fullført!</h2><p>Alle tre toppene er løst. Godt gått!</p><div class="row"><button class="ghost" data-x>Bli her</button><button class="pri" id="tocal">Til kalenderen</button></div>`,
-      b=>{b.querySelector('[data-x]').onclick=closeModal;b.querySelector('#tocal').onclick=()=>{closeModal();show('home');renderCal()}})};
+    if(solvedCount(day)===cfg.peaks.length){snow();const li=dayLetter(day),ch=li>=0?secretLetters()[li]:'';
+      modal(`${ch?`<p class="step" style="text-align:center">Ny bokstav i den hemmelige beskjeden</p><div class="newletter">${esc(ch)}</div>`:'<div class="star">★</div>'}<h2>Luke ${day} er fullført!</h2><p>Alle tre toppene er løst. Godt gått!${ch?' Se kalenderen for å se hvor bokstaven hører hjemme.':''}</p><div class="row"><button class="ghost" data-x>Bli her</button><button class="pri" id="tocal">Til kalenderen</button></div>`,
+      b=>{b.querySelector('[data-x]').onclick=closeModal;b.querySelector('#tocal').onclick=()=>{closeModal();show('home');renderCal()}})}};
   modal(`<div class="step">Luke ${day} · ${esc(p.name)}</div><h2>${s.ok?'Dagens gåte':'Du er på toppen!'}</h2><p class="task">${nl(q)}</p>
     ${s.ok?`<p class="msg ok">Løst kl. ${clock(s.ok)}${answers.length?'. Svar: '+esc(String(a).split('|')[0]):''}</p><div class="row"><button class="pri" data-x>Lukk</button></div>`
     :answers.length?`<label class="f">Ditt svar<input id="ans" autocomplete="off" enterkeyhint="done"></label><p class="msg" id="msg"></p>
@@ -310,12 +349,16 @@ $('#apeaks').onclick=e=>{const b=e.target.closest('button[data-a=here]');if(!b)r
 };
 function renderRiddles(){
   const d=+$('#a-day').value,R=cfg.days[d-1];
-  $('#ariddles').innerHTML=cfg.peaks.map((p,i)=>`<div class="rid" data-i="${i}"><b>${esc(p.name)}</b>
+  $('#a-secret').value=cfg.secret||'';secCount();
+  $('#ariddles').innerHTML=`<label class="f">Dagens oppdrag<textarea id="a-mission" rows="2">${esc(cfg.missions[d-1]||'')}</textarea></label>`+cfg.peaks.map((p,i)=>`<div class="rid" data-i="${i}"><b>${esc(p.name)}</b>
     <label class="f">Gåte / oppgave<textarea data-k="0" rows="3">${esc(R[i][0])}</textarea></label>
     <div class="two"><label class="f">Svar (flere med |, tomt = ingen svar)<input data-k="1" value="${esc(R[i][1])}" autocomplete="off"></label>
     <label class="f">Hint<input data-k="2" value="${esc(R[i][2])}"></label></div></div>`).join('');
 }
 $('#a-day').onchange=renderRiddles;
+function secCount(){const n=secretLetters().length;$('#a-seccount').textContent=`${n} bokstaver`+(n===24?'. Perfekt, én per luke.':n<24?`. De siste ${24-n} lukene gir ingen bokstav.`:`. Bokstav ${25} og utover blir aldri vist.`)}
+$('#a-secret').oninput=e=>{cfg.secret=e.target.value;saveCfg();secCount()};
+$('#ariddles').addEventListener('input',e=>{if(e.target.id==='a-mission'){cfg.missions[+$('#a-day').value-1]=e.target.value;saveCfg()}});
 $('#ariddles').oninput=e=>{const k=e.target.dataset.k;if(k===undefined)return;cfg.days[+$('#a-day').value-1][+e.target.closest('.rid').dataset.i][+k]=e.target.value;saveCfg()};
 $('#t-open').onchange=e=>{testOpen=e.target.checked;store.set('tk_test',testOpen)};
 $('#hideadm').onclick=()=>confirmBox('Skjule Arrangør-knappen på denne telefonen? Husk å ta bort haken for «Åpne alle luker nå» og nullstille fremdriften først hvis telefonen skal brukes til selve kalenderen.',()=>{adminOn=false;store.set('tk_admin',false);show('home');renderCal()},'Skjul');
@@ -336,7 +379,7 @@ $('#share').onclick=()=>{
 };
 function importCfg(raw){let s=String(raw||'').trim();const k=s.indexOf('kal=');if(k>=0)s=s.slice(k+4);
   const c=dec(s);if(!c||!Array.isArray(c.peaks)||c.peaks.length!==3||!Array.isArray(c.days)||c.days.length!==24)throw new Error('ugyldig');
-  c.v=CFG_VERSION;cfg=c;saveCfg()}
+  fillCfg(c);c.v=CFG_VERSION;cfg=c;saveCfg()}
 $('#imp').onclick=()=>modal(`<h2>Importer kalender</h2><label class="f">Lim inn lenken<textarea id="it"></textarea></label><p class="msg" id="im"></p>
   <div class="row"><button class="ghost" data-x>Avbryt</button><button class="pri" id="ig">Importer</button></div>`,
   b=>{b.querySelector('[data-x]').onclick=closeModal;b.querySelector('#ig').onclick=()=>{try{importCfg($('#it').value);closeModal();drawAdmin();renderPeaks();renderRiddles();info('<p>Kalenderen er importert.</p>')}catch(e){$('#im').textContent='Fant ingen gyldig kalender i teksten.'}}});
