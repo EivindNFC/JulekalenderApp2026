@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#a3122a">
+<title>Toppkalender</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: warm, playful advent calendar for a hiker
+   IDEA: a paper advent calendar with 24 red doors, each opening onto a map of three peaks
+   PICTURE: the door grid on home; the topo map with three numbered peaks inside a door
+   COLOUR and TYPE: Christmas red dominant, snow white, ink; Barlow Condensed numerals, Barlow body
+   LAYOUT: door grid in one column; map on top, peak list below */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#141519);--panel:light-dark(#f4f2f0,#1f2127);--ink:light-dark(#1d1f24,#f1efec);--mute:light-dark(#5f6168,#a9abb2);--line:light-dark(#dcd8d4,#33353d);--red:#b3122d;--red2:#8c0e23;--me:#2a6fdb}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Barlow,system-ui,sans-serif;display:flex;flex-direction:column;overflow-x:clip}
+header{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--red);color:#fff;min-height:54px}
+header h1{font:700 24px/1.05 'Barlow Condensed',sans-serif;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header button{background:none;border:0;color:#fff;min-height:44px;min-width:44px;font:600 15px Barlow,sans-serif;cursor:pointer;padding:0 8px}
+#back{font-size:30px;line-height:1}
+main{flex:1;display:flex;flex-direction:column;min-height:0}
+section{flex:1;display:flex;flex-direction:column;min-height:0}
+section[hidden]{display:none}
+.scrollv{overflow-y:auto;padding:16px max(4vw,14px) 40px}
+h2{font:700 32px/1.05 'Barlow Condensed',sans-serif;margin:0 0 8px;text-wrap:balance}
+h3{font:600 20px/1.2 'Barlow Condensed',sans-serif;margin:0}
+p{margin:0 0 12px}
+.lead{color:var(--mute);max-width:60ch}
+button{font:600 16px Barlow,sans-serif;min-height:44px;padding:0 16px;border-radius:10px;border:2px solid transparent;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--me);outline-offset:2px}
+.pri{background:var(--red);color:#fff}
+.pri:disabled{background:var(--line);color:var(--mute);cursor:not-allowed}
+.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.row{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.row>*{flex:1 1 140px}
+.f{display:block;font-size:14px;color:var(--mute);margin-top:10px}
+.f input,.f textarea,.f select{display:block;width:100%;margin-top:4px;font:16px Barlow,sans-serif;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:8px;padding:10px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+@media(max-width:520px){.two{grid-template-columns:minmax(0,1fr)}}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:12px}
+/* doors */
+.cal{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}
+@media(min-width:700px){.cal{grid-template-columns:repeat(6,minmax(0,1fr))}}
+.door{position:relative;aspect-ratio:1/1.1;border-radius:12px;border:0;padding:8px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;text-align:left;background:var(--red);color:#fff;box-shadow:inset 0 0 0 3px rgba(255,255,255,.25),0 3px 0 var(--red2)}
+.door b{font:700 clamp(30px,9vw,46px)/1 'Barlow Condensed',sans-serif}
+.door small{font-size:12px;line-height:1.2}
+.door.locked{background:var(--panel);color:var(--mute);box-shadow:inset 0 0 0 2px var(--line)}
+.door.done{background:var(--bg);color:var(--red);box-shadow:inset 0 0 0 3px var(--red)}
+.door.today{outline:3px solid var(--ink);outline-offset:3px}
+.door .dots{display:flex;gap:4px}
+.door .dots i{width:9px;height:9px;border-radius:50%;border:2px solid currentColor}
+.door .dots i.on{background:currentColor}
+.legend{font-size:14px;color:var(--mute);margin-top:14px}
+/* day */
+.map{flex:1;min-height:240px;background:var(--panel)}
+#v-admin .map{flex:none;height:38vh}
+#panel{flex:none;max-height:58vh;overflow-y:auto;padding:12px max(4vw,14px) calc(14px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line);box-shadow:0 -6px 20px rgba(0,0,0,.12)}
+.step{font-size:14px;font-weight:600;color:var(--red)}
+.peak{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.peak:first-of-type{border-top:0}
+.peak .nm{font-weight:600}
+.peak .st{font-size:14px;color:var(--mute)}
+.peak button{padding:0 12px}
+.num{width:36px;height:36px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font:700 18px 'Barlow Condensed',sans-serif}
+.num.ok{background:var(--ink);color:var(--bg)}
+.tools{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:8px;font-size:14px;color:var(--mute)}
+.tools label{display:flex;align-items:center;gap:8px;min-height:44px}
+.tools input{width:22px;height:22px}
+.msg{min-height:1.4em;font-weight:600;color:var(--red);margin:8px 0 0}
+.msg.ok{color:var(--ink)}
+.task{font-size:19px}
+#modal{position:fixed;inset:0;background:rgba(10,10,14,.55);display:flex;align-items:flex-end;justify-content:center;z-index:2000;padding:12px}
+#modal[hidden]{display:none}
+#mbody{background:var(--bg);color:var(--ink);border-radius:16px;padding:18px;width:min(560px,100%);max-height:88vh;overflow-y:auto}
+#mbody textarea{width:100%;min-height:110px;font-size:14px}
+.pin span{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;font:700 18px 'Barlow Condensed',sans-serif;color:#fff;background:var(--red);border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.pin-ok span{background:#1d1f24}
+.pulse{animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 8px rgba(179,18,45,.25)}}
+.star{font-size:56px;line-height:1;color:var(--red);text-align:center;margin:4px 0 8px}
+@media(prefers-reduced-motion:reduce){.pulse{animation:none}}
+.rid{border-top:1px solid var(--line);padding-top:10px;margin-top:12px}
+</style>
+</head>
+<body>
+<header>
+  <button id="back" aria-label="Tilbake" hidden>‹</button>
+  <h1 id="ttl">Toppkalender</h1>
+  <button id="adm">Arrangør</button>
+</header>
+<main>
+  <section id="v-home"><div class="scrollv">
+    <h2>24 luker, tre topper</h2>
+    <p class="lead">Åpne dagens luke og gå til Gleodden, Trollkjerringhei og Duekniben. På hver topp sjekker du inn og får dagens gåte. Løs alle tre for å fullføre luka.</p>
+    <div class="cal" id="cal"></div>
+    <p class="legend">Rød luke: klar til å åpnes. Prikkene viser hvor mange topper som er løst. Hvit luke med stjerne: fullført.</p>
+  </div></section>
+
+  <section id="v-day" hidden>
+    <div id="dmap" class="map"></div>
+    <div id="panel"></div>
+  </section>
+
+  <section id="v-admin" hidden>
+    <div id="amap" class="map"></div>
+    <div class="scrollv">
+      <h2>Arrangør</h2>
+      <p class="lead">Dra toppene på kartet for å justere, eller stå på toppen og trykk «Sett til der jeg står». Endringer lagres på denne telefonen. Bruk «Del kalenderen» for å sende dem videre.</p>
+      <div id="apeaks"></div>
+      <div class="box">
+        <h3>Testing</h3>
+        <div class="tools"><label><input type="checkbox" id="t-open"> Åpne alle luker nå (før desember)</label></div>
+        <div class="row"><button class="ghost" id="reset">Nullstill all fremdrift</button><button class="ghost" id="share">Del kalenderen</button></div>
+        <div class="row"><button class="ghost" id="imp">Importer kalender</button><button class="ghost" id="defaults">Tilbakestill gåtene</button></div>
+      </div>
+      <div class="box">
+        <h3>Gåter</h3>
+        <label class="f">Luke<select id="a-day"></select></label>
+        <div id="ariddles"></div>
+      </div>
+    </div>
+  </section>
+</main>
+<div id="modal" hidden><div id="mbody"></div></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+{
+/* ======== INNHOLD: topper og gåter (rediger her eller i Arrangør-visningen) ======== */
+const DEFAULT={
+ peaks:[
+  {id:'g',name:'Gleodden',lat:58.14425,lng:8.03481,radius:80},
+  {id:'t',name:'Trollkjerringhei',lat:58.1446,lng:8.0222,radius:120},
+  {id:'d',name:'Duekniben',lat:58.14421,lng:7.97396,radius:80}],
+ /* hver luke: [Gleodden, Trollkjerringhei, Duekniben] = [gåte, svar (flere med |), hint] */
+ days:[
+ [["Jeg har nåler, men syr aldri. I desember står jeg pyntet i stua. Hva er jeg?","juletre|juletreet|gran|grantre","Det sitter ofte en stjerne på toppen av meg."],
+  ["Hvor mange luker har en vanlig julekalender?","24|tjuefire|tjuefire","Den siste åpnes på julaften."],
+  ["Hvilket dyr trekker julenissens slede?","reinsdyr|rein|reinsdyret|reinsdyrene","Rudolf er ett av dem."]],
+ [["Jo mer du tar bort fra meg, jo større blir jeg. Hva er jeg?","hull|ethull|hullet","Tenk på en spade i sanda."],
+  ["Det er 52 uker i et år og 7 dager i en uke. Hva blir 52 ganger 7?","364","50 × 7 = 350. Legg til 2 × 7."],
+  ["Hvilken farge har nisselua?","rød|rod","Samme farge som denne appen."]],
+ [["Jeg er hvit og kald, faller fra himmelen, og ingen av oss er like. Hva er jeg?","snøfnugg|snøkrystall|snø|snofnugg","Jeg lander på votten din."],
+  ["Hva heter grøten fjøsnissen får på julaften?","risengrynsgrøt|risgrøt|grøt|julegrøt","Den har ofte et smørøye i midten."],
+  ["Hvor mange søndager er det i advent?","4|fire","Ett lys for hver av dem i adventsstaken."]],
+ [["Hva har hender, men kan ikke klappe?","klokke|enklokke|eiklokke|ur|klokka","Den henger kanskje på veggen og tikker."],
+  ["Hvilken elv renner ut i sjøen midt i Kristiansand?","otra|otraelva","Du krysser den når du går fra Lund til Duekniben."],
+  ["Stokk om bokstavene i SNEIS, og du får en julefigur. Hvem?","nisse|nissen","Han har rød lue."]],
+ [["Hva går alltid opp, men aldri ned?","alder|alderen","Du får ett år mer hver bursdag."],
+  ["Hvor mange slag julekaker sier tradisjonen at man skal bake?","7|sju|syv","Et tall mellom seks og åtte."],
+  ["Jeg har ett øye, men kan ikke se. Hva er jeg?","nål|synål|ennål|einål|nal","Tråden går gjennom øyet mitt."]],
+ [["I dag er det 6. desember. Hvilken dato er det tre dager før dagen etter i morgen? Svar med tall.","5|5.|5.desember|femte","Dagen etter i morgen er den 8."],
+  ["Hvilken region nord i Finland sies å være julenissens hjem?","lappland|lapland|rovaniemi","Navnet starter på L."],
+  ["Hva gjemmes i julegrøten og gir premie til den som finner den?","mandel|mandelen|enmandel","Premien er ofte en marsipangris."]],
+ [["Jeg blir våtere jo mer jeg tørker. Hva er jeg?","håndkle|håndkleet|handkle|ethåndkle","Du bruker meg etter dusjen."],
+  ["Regn ut: antall bein på 3 reinsdyr pluss antall bein på 2 nisser.","16|seksten","Reinsdyr har 4 bein, nisser har 2."],
+  ["Hvilken himmelretning må du seile fra Kristiansand for å komme til Danmark?","sør|syd|sørvest|sydvest|sor","Motsatt av nord."]],
+ [["Hva kan reise jorden rundt, men blir hele tiden i hjørnet?","frimerke|etfrimerke|frimerket","Det sitter på et julekort."],
+  ["I dag er det 8. desember. Hvor mange dager er det igjen til julaften?","16|seksten","24 minus 8."],
+  ["Hva kaller vi dagen før julaften?","lillejulaften|lille julaften","Den er liten, men har samme navn."]],
+ [["Hva har hode og hale, men ingen kropp?","mynt|enmynt|mynten|krone","Du kan kaste den for å bestemme noe."],
+  ["Legg sammen alle tallene fra 1 til 9. Hva blir summen?","45|førtifem","1+9, 2+8, 3+7, 4+6 blir 10 hver. Pluss 5."],
+  ["Hva heter den lille nissen som passer på dyrene på gården?","fjøsnisse|fjøsnissen|gardsnisse|gårdsnisse|tomte","Han bor i fjøset."]],
+ [["Jeg har mange tenner, men biter aldri. Hva er jeg?","kam|enkam|eikam|kammen","Du bruker meg i håret."],
+  ["3 nisser pakker 3 gaver på 3 minutter. Hvor mange minutter bruker 100 nisser på 100 gaver?","3|tre","Hver nisse bruker like lang tid på sin gave."],
+  ["Hvor mange reinsdyr har julenissen når Rudolf er med?","9|ni","Åtte i sangen, pluss en med rød nese."]],
+ [["Hva må knuses før du kan bruke det?","egg|etegg|egget","Du trenger det til pepperkakedeigen."],
+  ["Hvor mange armer har en snøkrystall?","6|seks","Den er sekskantet."],
+  ["Hva heter den varme, krydrede julevinen?","gløgg|glogg","Den serveres ofte med rosiner og mandler."]],
+ [["Jeg er full av hull, men holder likevel på vann. Hva er jeg?","svamp|ensvamp|svampen","Du vasker opp med meg."],
+  ["Når du har åpnet dagens luke, hvor mange luker har du åpnet til sammen?","12|tolv","Du er halvveis."],
+  ["Hvilken norsk by sender hvert år et juletre til Trafalgar Square i London?","oslo","Hovedstaden."]],
+ [["Jeg er alltid foran deg, men du kan aldri se meg. Hva er jeg?","fremtiden|framtiden|fremtid|framtid","Den kommer i morgen."],
+  ["Hvilken helgen feires 13. desember med lystog?","lucia|santalucia|luciadagen","Hun har lys i håret."],
+  ["Hva heter de gule bollene med safran vi spiser i dag?","lussekatt|lussekatter|lussekatten","De har rosiner og er formet som en S."]],
+ [["Hva har fire bein om morgenen, to midt på dagen og tre om kvelden?","menneske|mennesket|etmenneske","Om kvelden bruker det stokk."],
+  ["Du baker 7 slag kaker og 2 plater av hvert slag. Hvor mange plater blir det?","14|fjorten","7 ganger 2."],
+  ["I hvilken bydel i Kristiansand ligger Gleodden og Trollkjerringhei?","lund","Øst for Otra."]],
+ [["Hva blir større jo mer du deler det med andre?","glede|gleden|kjærlighet|kjærligheten","Det kjennes godt i hjertet."],
+  ["Hvor mange timer er det fra midnatt 15. desember til midnatt når julaften starter?","216","Det er 9 døgn. 9 × 24."],
+  ["Hva heter kaken som er formet som et tårn av ringer?","kransekake|kransekaka","Den er laget av mandler og har ofte flagg på."]],
+ [["Jeg har tangenter, men ingen dører. Hva er jeg?","piano|etpiano|tastatur|klaver|flygel","Du kan spille julesanger på meg."],
+  ["Hvilket tall kommer etter: 2, 4, 8, 16, …?","32|trettito","Hvert tall dobles."],
+  ["Hvilken plante henger vi opp og kysser under?","misteltein|mistelteinen|mistelten","Den har hvite bær."]],
+ [["Hva kan du fange, men ikke kaste?","forkjølelse|forkjolelse|snue|enforkjølelse","Du nyser av den."],
+  ["Hvor mange ganger sier nissen «ho» når han ler?","3|tre","Ho ho …"],
+  ["Hva heter det søte godteriet som ofte formes som en liten gris?","marsipan|marsipangris","Det er laget av mandler og sukker."]],
+ [["Jeg har hode og fot og fire bein, men går aldri. Hva er jeg?","seng|eiseng|enseng|senga","Du sover i meg."],
+  ["Hvor mange minutter er det i 6 timer?","360|trehundreogseksti","60 × 6."],
+  ["Hva heter den røde kålen som ofte serveres til ribba?","rødkål|rodkal|rødkålen","Den er rød og syrlig."]],
+ [["Jeg er lett som en fjær, men ingen kan holde meg lenge. Hva er jeg?","pust|pusten|åndedrett|åndedrag","Du kan holde den under vann."],
+  ["Hvor mange måneder har 28 dager?","12|tolv|alle","Ikke bare februar …"],
+  ["Hva heter julematen som lages av tørrfisk lagt i lut?","lutefisk|lutefisken","Den skjelver på tallerkenen."]],
+ [["Jeg har munn, men spiser aldri, og seng, men sover aldri. Hva er jeg?","elv|eielv|enelv|elva","Otra er en av oss."],
+  ["Hvis du går tre topper hver dag i alle 24 dagene, hvor mange toppbesøk blir det?","72|syttito","3 × 24."],
+  ["Over hvilken by sto stjerna i juleevangeliet?","betlehem|betlehemsstjerna","Byen der Jesus ble født."]],
+ [["Jeg forsvinner med en gang du sier navnet mitt. Hva er jeg?","stillhet|stillheten","Shh …"],
+  ["Hvor mange dager har desember?","31|trettien|trettiein","En dag mer enn november."],
+  ["I dag eller i morgen er årets korteste dag. Hva kaller vi det?","vintersolverv|solverv|solsnu","Etter dette blir dagene lengre."]],
+ [["Jeg har mange ringer, men ingen fingre. Hva er jeg?","tre|ettre|treet|trestamme","Ringene mine viser hvor gammel jeg er."],
+  ["Hvilken båt har et navn som staves likt forlengs og baklengs?","kajakk","Du padler den."],
+  ["Hva heter kvelden vi feirer 31. desember?","nyttårsaften|nyttår|nyttarsaften","Det smeller i raketter."]],
+ [["Hva kan fylle et helt rom uten å ta plass?","lys|lyset","Tenn et stearinlys og se."],
+  ["Det er lillejulaften. Hvor mange luker er igjen etter dagens?","1|en|én|ein","Bare én til!"],
+  ["Hvor mange vinger har en engel?","2|to","Like mange som en fugl."]],
+ [["God jul! Hva sier vi til hverandre i dag?","godjul|gledeligjul","To ord, det første er «god»."],
+  ["Hvor mange bokstaver er det i ordet JULAFTEN?","8|åtte","Tell dem en og en."],
+  ["Du har klart alle 24 lukene og 72 toppbesøk. Gratulerer! Gå hjem, for der venter en overraskelse.","",""]]
+ ]};
+
+/* ======== hjelpere ======== */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nl=s=>esc(s).replace(/\n/g,'<br>');
+const mem={};
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return k in mem?mem[k]:d}},
+  set(k,v){mem[k]=v;try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const clone=o=>JSON.parse(JSON.stringify(o));
+let cfg=store.get('tk_cfg',null);if(!cfg||!Array.isArray(cfg.days)||cfg.days.length!==24)cfg=clone(DEFAULT);
+let prog=store.get('tk_prog',{});   /* prog[day][peakId] = {in:time, ok:time} */
+let testOpen=store.get('tk_test',false);
+const saveCfg=()=>store.set('tk_cfg',cfg),saveProg=()=>store.set('tk_prog',prog);
+const R=6371000,rad=x=>x*Math.PI/180;
+function dist(a,b){const dLat=rad(b.lat-a.lat),dLng=rad(b.lng-a.lng);const s=Math.sin(dLat/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLng/2)**2;return 2*R*Math.asin(Math.sqrt(s))}
+function bearing(a,b){const y=Math.sin(rad(b.lng-a.lng))*Math.cos(rad(b.lat));const x=Math.cos(rad(a.lat))*Math.sin(rad(b.lat))-Math.sin(rad(a.lat))*Math.cos(rad(b.lat))*Math.cos(rad(b.lng-a.lng));return (Math.atan2(y,x)*180/Math.PI+360)%360}
+const DIRS=['nord','nordøst','øst','sørøst','sør','sørvest','vest','nordvest'];
+const fmt=m=>m<1000?Math.round(m)+' m':(m/1000).toFixed(1).replace('.',',')+' km';
+const norm=s=>String(s||'').toLowerCase().normalize('NFC').replace(/[^\p{L}\p{N}]+/gu,'');
+const clock=t=>new Date(t).toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'});
+const dp=d=>prog[d]||(prog[d]={});
+const solvedCount=d=>cfg.peaks.filter(p=>prog[d]?.[p.id]?.ok).length;
+function isOpen(d){if(testOpen)return true;const n=new Date();return n>=new Date(n.getFullYear(),11,d)}
+function todayNum(){const n=new Date();return n.getMonth()===11&&n.getDate()<=24?n.getDate():0}
+
+/* ======== kart ======== */
+const KV='https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png';
+function mkMap(el){
+  const m=L.map(el).setView([58.145,8.005],13);let errs=0,osm=false;
+  const kv=L.tileLayer(KV,{maxZoom:18,attribution:'© <a href="https://www.kartverket.no/">Kartverket</a>'}).addTo(m);
+  kv.on('tileerror',()=>{if(++errs>6&&!osm){osm=true;m.removeLayer(kv);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(m)}});
+  return m}
+const pin=(t,k)=>L.divIcon({className:'pin'+(k?' pin-'+k:''),html:`<span>${t}</span>`,iconSize:[36,36],iconAnchor:[18,18]});
+const fitPeaks=m=>m.fitBounds(L.latLngBounds(cfg.peaks.map(p=>[p.lat,p.lng])).pad(.25),{maxZoom:15});
+let dmap=null,dLayer=null,amap=null,aLayer=null;
+
+/* ======== modal ======== */
+function modal(html,bind){$('#mbody').innerHTML=html;$('#modal').hidden=false;if(bind)bind($('#mbody'))}
+const closeModal=()=>{$('#modal').hidden=true};
+function confirmBox(text,ok,yes='Ja'){modal(`<p>${esc(text)}</p><div class="row"><button class="ghost" data-x>Avbryt</button><button class="pri" data-ok>${esc(yes)}</button></div>`,
+  b=>{b.querySelector('[data-x]').onclick=closeModal;b.querySelector('[data-ok]').onclick=()=>{closeModal();ok()}})}
+function info(html){modal(html+`<div class="row"><button class="pri" data-x>OK</button></div>`,b=>b.querySelector('[data-x]').onclick=closeModal)}
+
+/* ======== visninger ======== */
+let view='home',day=0;
+function show(v,title){
+  view=v;for(const s of ['home','day','admin'])$('#v-'+s).hidden=s!==v;
+  $('#back').hidden=v==='home';$('#adm').hidden=v!=='home';
+  $('#ttl').textContent=title||'Toppkalender';
+  if(v!=='day')stopGps();
+}
+$('#back').onclick=()=>{closeModal();show('home');renderCal()};
+
+/* ======== kalender ======== */
+function renderCal(){
+  const t=todayNum();
+  $('#cal').innerHTML=Array.from({length:24},(_,i)=>{
+    const d=i+1,n=solvedCount(d),all=n===cfg.peaks.length,open=isOpen(d);
+    const cls=all?'done':open?'':'locked';
+    const sub=all?'★ Fullført':open?(n?`${n} av 3 løst`:'Åpne'):`${d}. des`;
+    return `<button class="door ${cls} ${d===t?'today':''}" data-d="${d}" aria-label="Luke ${d}, ${sub}"><b>${d}</b>
+      <span><span class="dots">${cfg.peaks.map(p=>`<i class="${prog[d]?.[p.id]?.ok?'on':''}"></i>`).join('')}</span><small>${sub}</small></span></button>`}).join('');
+}
+$('#cal').onclick=e=>{const b=e.target.closest('.door');if(!b)return;const d=+b.dataset.d;
+  if(!isOpen(d))return info(`<h2>Ikke ennå!</h2><p>Luke ${d} kan åpnes ${d}. desember.</p>`);openDay(d)};
+
+/* ======== dagens luke ======== */
+let watch=null,pos=null,sim=false,gpsErr='',fitted=false;
+function startGps(){
+  if(!navigator.geolocation){gpsErr='Denne nettleseren gir ikke posisjon.';return}
+  if(watch!==null)return;
+  watch=navigator.geolocation.watchPosition(p=>{gpsErr='';if(!sim){pos={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};renderDay()}},
+    e=>{gpsErr=e.code===1?'Posisjon er ikke tillatt. Gi Chrome tilgang til posisjon.':'Finner ikke GPS ennå.';if(!sim)renderDay()},
+    {enableHighAccuracy:true,maximumAge:5000,timeout:30000});
+}
+function stopGps(){if(watch!==null){navigator.geolocation.clearWatch(watch);watch=null}}
+function openDay(d){
+  day=d;sim=false;pos=null;fitted=false;show('day','Luke '+d);
+  if(!dmap){dmap=mkMap('dmap');dLayer=L.layerGroup().addTo(dmap);dmap.on('click',e=>{if(sim){pos={lat:e.latlng.lat,lng:e.latlng.lng,acc:5};renderDay()}})}
+  setTimeout(()=>{dmap.invalidateSize();fitPeaks(dmap);renderDay()},60);
+  startGps();
+}
+const near=p=>pos&&dist(pos,p)<=p.radius+Math.min(pos.acc||0,30);
+function renderDay(){
+  if(view!=='day'||!dLayer)return;
+  const P=dp(day);dLayer.clearLayers();
+  cfg.peaks.forEach((p,i)=>{const ok=P[p.id]?.ok;
+    if(!ok)L.circle([p.lat,p.lng],{radius:p.radius,color:'#b3122d',weight:2,fillOpacity:.1}).addTo(dLayer);
+    L.marker([p.lat,p.lng],{icon:pin(ok?'✓':i+1,ok?'ok':'')}).bindTooltip(p.name).addTo(dLayer)});
+  if(pos){L.circle([pos.lat,pos.lng],{radius:pos.acc,weight:0,fillColor:'#2a6fdb',fillOpacity:.15}).addTo(dLayer);
+    L.circleMarker([pos.lat,pos.lng],{radius:8,color:'#fff',weight:3,fillColor:'#2a6fdb',fillOpacity:1}).addTo(dLayer)}
+  const n=solvedCount(day);
+  const rows=cfg.peaks.map((p,i)=>{const s=P[p.id]||{};let st,btn;
+    if(s.ok){st=`Løst kl. ${clock(s.ok)}`;btn=`<button class="ghost" data-a="read" data-p="${p.id}">Les</button>`}
+    else if(s.in){st=`Sjekket inn kl. ${clock(s.in)}`;btn=`<button class="pri pulse" data-a="solve" data-p="${p.id}">Løs gåten</button>`}
+    else if(near(p)){st='Du er på toppen!';btn=`<button class="pri pulse" data-a="in" data-p="${p.id}">Sjekk inn</button>`}
+    else{st=pos?`${fmt(dist(pos,p))} unna, mot ${DIRS[Math.round(bearing(pos,p)/45)%8]}`:(gpsErr||'Venter på GPS …');btn=`<button class="pri" disabled>Sjekk inn</button>`}
+    return `<div class="peak"><span class="num ${s.ok?'ok':''}">${s.ok?'✓':i+1}</span><div><div class="nm">${esc(p.name)}</div><div class="st">${esc(st)}</div></div>${btn}</div>`}).join('');
+  $('#panel').innerHTML=`<div class="step">Luke ${day} · ${n} av ${cfg.peaks.length} topper løst${pos&&!sim?` · GPS ±${Math.round(pos.acc)} m`:''}</div>${rows}
+    <div class="tools"><label><input type="checkbox" id="sim" ${sim?'checked':''}> Testmodus: trykk på kartet for å flytte deg</label></div>`;
+  $('#sim').onchange=e=>{sim=e.target.checked;if(!sim){pos=null;stopGps();startGps()}renderDay()};
+}
+$('#panel').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-a]');if(!b)return;const p=cfg.peaks.find(x=>x.id===b.dataset.p),P=dp(day);
+  if(b.dataset.a==='in'){P[p.id]={in:Date.now()};saveProg();renderDay();openRiddle(p)}
+  else openRiddle(p);
+});
+function openRiddle(p){
+  const i=cfg.peaks.indexOf(p),[q,a,h]=cfg.days[day-1][i],P=dp(day),s=P[p.id]||{};
+  const answers=String(a||'').split('|').map(norm).filter(Boolean);
+  const done=()=>{s.ok=Date.now();P[p.id]=s;saveProg();closeModal();renderDay();
+    if(solvedCount(day)===cfg.peaks.length)modal(`<div class="star">★</div><h2>Luke ${day} er fullført!</h2><p>Alle tre toppene er løst. Godt gått!</p><div class="row"><button class="ghost" data-x>Bli her</button><button class="pri" id="tocal">Til kalenderen</button></div>`,
+      b=>{b.querySelector('[data-x]').onclick=closeModal;b.querySelector('#tocal').onclick=()=>{closeModal();show('home');renderCal()}})};
+  modal(`<div class="step">Luke ${day} · ${esc(p.name)}</div><h2>${s.ok?'Dagens gåte':'Du er på toppen!'}</h2><p class="task">${nl(q)}</p>
+    ${s.ok?`<p class="msg ok">Løst kl. ${clock(s.ok)}${answers.length?'. Svar: '+esc(String(a).split('|')[0]):''}</p><div class="row"><button class="pri" data-x>Lukk</button></div>`
+    :answers.length?`<label class="f">Ditt svar<input id="ans" autocomplete="off" enterkeyhint="done"></label><p class="msg" id="msg"></p>
+      <div class="row"><button class="ghost" data-x>Senere</button>${h?'<button class="ghost" id="hb">Hint</button>':''}<button class="pri" id="ok">Svar</button></div>`
+    :`<div class="row"><button class="pri" id="ok">Ferdig</button></div>`}`,
+  b=>{const x=b.querySelector('[data-x]'),ok=b.querySelector('#ok'),hb=b.querySelector('#hb'),inp=b.querySelector('#ans');
+    if(x)x.onclick=closeModal;
+    if(hb)hb.onclick=()=>{$('#msg').className='msg ok';$('#msg').textContent='Hint: '+h};
+    if(!ok)return;if(!answers.length){ok.onclick=done;return}
+    const check=()=>{if(answers.includes(norm(inp.value))){$('#msg').className='msg ok';$('#msg').textContent='Riktig!';setTimeout(done,700)}
+      else{$('#msg').className='msg';$('#msg').textContent='Ikke helt. Prøv igjen.'}};
+    ok.onclick=check;inp.onkeydown=e=>{if(e.key==='Enter')check()};});
+}
+
+/* ======== arrangør ======== */
+$('#adm').onclick=()=>confirmBox('Arrangørvisningen viser alle gåter og svar. Vil du åpne den?',openAdmin,'Åpne');
+function openAdmin(){
+  show('admin','Arrangør');$('#t-open').checked=testOpen;
+  if(!amap){amap=mkMap('amap');aLayer=L.layerGroup().addTo(amap)}
+  setTimeout(()=>{amap.invalidateSize();fitPeaks(amap)},60);
+  $('#a-day').innerHTML=Array.from({length:24},(_,i)=>`<option value="${i+1}">Luke ${i+1}</option>`).join('');
+  $('#a-day').value=todayNum()||1;
+  drawAdmin();renderPeaks();renderRiddles();
+}
+function drawAdmin(){
+  aLayer.clearLayers();
+  cfg.peaks.forEach((p,i)=>{L.circle([p.lat,p.lng],{radius:p.radius,color:'#b3122d',weight:1.5,fillOpacity:.08}).addTo(aLayer);
+    const m=L.marker([p.lat,p.lng],{icon:pin(i+1),draggable:true}).bindTooltip(p.name).addTo(aLayer);
+    m.on('dragend',()=>{const ll=m.getLatLng();p.lat=+ll.lat.toFixed(6);p.lng=+ll.lng.toFixed(6);saveCfg();drawAdmin();renderPeaks()})});
+}
+function renderPeaks(){
+  $('#apeaks').innerHTML=cfg.peaks.map((p,i)=>`<div class="box" data-i="${i}"><h3>${i+1}. ${esc(p.name)}</h3>
+    <div class="two"><label class="f">Navn<input data-k="name" value="${esc(p.name)}"></label>
+    <label class="f">Innsjekk-radius (meter)<input data-k="radius" type="number" inputmode="numeric" min="15" max="500" value="${p.radius}"></label></div>
+    <div class="f">${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}</div>
+    <div class="row"><button class="ghost" data-a="here">Sett til der jeg står</button></div></div>`).join('');
+}
+$('#apeaks').oninput=e=>{const k=e.target.dataset.k;if(!k)return;const p=cfg.peaks[+e.target.closest('.box').dataset.i];
+  p[k]=k==='radius'?Math.max(10,+e.target.value||80):e.target.value;saveCfg();drawAdmin()};
+$('#apeaks').onclick=e=>{const b=e.target.closest('button[data-a=here]');if(!b)return;const p=cfg.peaks[+b.closest('.box').dataset.i];
+  if(!navigator.geolocation)return info('<p>Denne nettleseren gir ikke posisjon.</p>');
+  b.textContent='Henter posisjon …';
+  navigator.geolocation.getCurrentPosition(g=>{p.lat=+g.coords.latitude.toFixed(6);p.lng=+g.coords.longitude.toFixed(6);saveCfg();drawAdmin();renderPeaks();amap.setView([p.lat,p.lng],16);
+      info(`<p>${esc(p.name)} er flyttet til der du står (±${Math.round(g.coords.accuracy)} m).</p>`)},
+    ()=>{b.textContent='Sett til der jeg står';info('<p>Fikk ikke posisjonen. Sjekk at Chrome har lov til å bruke posisjon.</p>')},{enableHighAccuracy:true,timeout:30000,maximumAge:0});
+};
+function renderRiddles(){
+  const d=+$('#a-day').value,R=cfg.days[d-1];
+  $('#ariddles').innerHTML=cfg.peaks.map((p,i)=>`<div class="rid" data-i="${i}"><b>${esc(p.name)}</b>
+    <label class="f">Gåte / oppgave<textarea data-k="0" rows="3">${esc(R[i][0])}</textarea></label>
+    <div class="two"><label class="f">Svar (flere med |, tomt = ingen svar)<input data-k="1" value="${esc(R[i][1])}" autocomplete="off"></label>
+    <label class="f">Hint<input data-k="2" value="${esc(R[i][2])}"></label></div></div>`).join('');
+}
+$('#a-day').onchange=renderRiddles;
+$('#ariddles').oninput=e=>{const k=e.target.dataset.k;if(k===undefined)return;cfg.days[+$('#a-day').value-1][+e.target.closest('.rid').dataset.i][+k]=e.target.value;saveCfg()};
+$('#t-open').onchange=e=>{testOpen=e.target.checked;store.set('tk_test',testOpen)};
+$('#reset').onclick=()=>confirmBox('Slette all fremdrift (innsjekk og løste gåter) på denne telefonen?',()=>{prog={};saveProg()},'Nullstill');
+$('#defaults').onclick=()=>confirmBox('Tilbakestille topper og gåter til originalen? Dine endringer forsvinner.',()=>{cfg=clone(DEFAULT);saveCfg();drawAdmin();renderPeaks();renderRiddles();fitPeaks(amap)},'Tilbakestill');
+
+/* ======== deling ======== */
+const enc=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o))));
+const dec=s=>JSON.parse(decodeURIComponent(escape(atob(s.trim()))));
+$('#share').onclick=()=>{
+  const link=location.href.split('#')[0]+'#kal='+enc(cfg);
+  modal(`<h2>Del kalenderen</h2><p class="lead">Lenken inneholder toppene og alle gåtene dine. Når den åpnes, erstatter den kalenderen på telefonen til mottakeren. Fremdriften hennes beholdes.</p>
+    <textarea readonly id="sl">${esc(link)}</textarea><p class="msg ok" id="sm"></p>
+    <div class="row"><button class="ghost" data-x>Lukk</button>${navigator.share?'<button class="ghost" id="ns">Del via app</button>':''}<button class="pri" id="cp">Kopier</button></div>`,
+  b=>{b.querySelector('[data-x]').onclick=closeModal;
+    b.querySelector('#cp').onclick=async()=>{try{await navigator.clipboard.writeText(link);$('#sm').textContent='Kopiert.'}catch(e){$('#sl').select();$('#sm').textContent='Marker teksten og kopier manuelt.'}};
+    const ns=b.querySelector('#ns');if(ns)ns.onclick=()=>navigator.share({title:'Toppkalender',text:'Julekalenderen din er klar!',url:link}).catch(()=>{});});
+};
+function importCfg(raw){let s=String(raw||'').trim();const k=s.indexOf('kal=');if(k>=0)s=s.slice(k+4);
+  const c=dec(s);if(!c||!Array.isArray(c.peaks)||c.peaks.length!==3||!Array.isArray(c.days)||c.days.length!==24)throw new Error('ugyldig');
+  cfg=c;saveCfg()}
+$('#imp').onclick=()=>modal(`<h2>Importer kalender</h2><label class="f">Lim inn lenken<textarea id="it"></textarea></label><p class="msg" id="im"></p>
+  <div class="row"><button class="ghost" data-x>Avbryt</button><button class="pri" id="ig">Importer</button></div>`,
+  b=>{b.querySelector('[data-x]').onclick=closeModal;b.querySelector('#ig').onclick=()=>{try{importCfg($('#it').value);closeModal();drawAdmin();renderPeaks();renderRiddles();info('<p>Kalenderen er importert.</p>')}catch(e){$('#im').textContent='Fant ingen gyldig kalender i teksten.'}}});
+
+/* ======== start ======== */
+if(!window.L){document.querySelector('main').innerHTML='<div class="scrollv"><h2>Ingen nettforbindelse</h2><p>Kartet trenger internett. Prøv igjen når du har dekning.</p></div>'}
+else{
+  renderCal();
+  if(location.hash.startsWith('#kal=')){
+    try{importCfg(location.hash);renderCal();info('<h2>Julekalenderen er klar!</h2><p>24 luker med tre topper hver. Åpne dagens luke og gå ut på tur.</p>')}
+    catch(e){info('<p>Lenken inneholdt ingen gyldig kalender.</p>')}
+    history.replaceState(null,'',location.pathname+location.search);
+  }
+}
+}
+</script>
+</body>
+</html>
